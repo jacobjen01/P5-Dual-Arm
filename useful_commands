@@ -1,0 +1,45 @@
+	Til bare at køre en interaktiv container:
+
+docker run -it --rm --runtime=nvidia --network=host     -v ~/P5-Dual-Arm:/home/P5-Dual-Arm     -u 1000:1000     ros2-jazzy:jetson
+
+
+
+	Til at bede om en container i baggrunden:
+
+docker run -d \
+    --name ros2_dev \
+    --runtime=nvidia \
+    --network=host \
+    -v ~/P5-Dual-Arm:/home/P5-Dual-Arm \
+    -u 1000:1000 \
+    -w /home/P5-Dual-Arm \
+    ros2-jazzy:jetson \
+    tail -f /dev/null
+
+	Til at gå i containeren som non-root user:
+	
+docker exec -it ros2_dev /bin/bash
+	
+	Til at gå i containeren som root user KUN TIL AT KØRE SUDO COMMANDS DO NOT CREATE FILES THEY WILL BE LOCKED:
+
+docker exec -u 0 -it ros2_dev bash
+
+	Til at stoppe baggrundscontainer:
+	
+docker stop ros2_dev
+
+	Til at genstarte samme baggrundscontainer:
+	
+docker start -ai ros2_dev
+
+	Se om container kører
+	
+docker ps
+
+NOTE: lav mest edits på hostsystem og brug volumes til at få det i docker
+
+
+	Byg image fra dockerfile
+
+docker build -t ros2-jazzy:jetson .
+
