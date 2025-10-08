@@ -25,8 +25,8 @@ setup(
     entry_points={
         'console_scripts': [
             'home = p2p_movement.home:main',
-            'example_move_bob = p2p_movement.move_bob:main',
-            'example_move_alice = p2p_movement.move_alice:main',
+            'bob_example = p2p_movement.move_bob:main',
+            'alice_example = p2p_movement.move_alice:main',
         ],
     },
 )
