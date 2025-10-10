@@ -17,6 +17,9 @@ RUN apt-get update && apt-get install -y \
 	ros-jazzy-ur-simulation-gz \
 	ros-jazzy-ur \
 	ros-jazzy-ros2controlcli \
+	ros-jazzy-rqt \
+	ros-jazzy-moveit \
+	python3-vcstool \
 	vim \
 	nano \
 	git \
@@ -24,6 +27,7 @@ RUN apt-get update && apt-get install -y \
 	python3-colcon-common-extensions \
 	&& rm -rf /var/lib/apt/lists/*
 
+CMD xeyes
 # Source ROS 2 setup on container start
 SHELL ["/bin/bash", "-c"]
 RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc 

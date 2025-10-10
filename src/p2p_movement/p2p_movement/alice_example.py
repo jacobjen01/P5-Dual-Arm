@@ -50,12 +50,12 @@ TRAJECTORIES = {
         {
             "positions": [0, -math.pi/2, 0, -math.pi/2, 0, 0],
             "velocities": [0, 0, 0, 0, 0, 0],
-            "time_from_start": Duration(sec=2, nanosec=0),
+            "time_from_start": Duration(sec=4, nanosec=0),
         },
         {
             "positions": [-0.195016, -1.70094, 0.902027, -0.944217, -1.52982, -0.195171],
             "velocities": [0, 0, 0, 0, 0, 0],
-            "time_from_start": Duration(sec=4, nanosec=0),
+            "time_from_start": Duration(sec=8, nanosec=0),
         },
     ],
    "traj1": [
