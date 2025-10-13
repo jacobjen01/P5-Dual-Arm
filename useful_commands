@@ -1,3 +1,12 @@
+	Til at starte roboterne 
+
+ros2 launch my_dual_robot_cell_control start_robots.launch.py
+
+	For at starte roboterne in simulation mode brug 
+
+ros2 launch my_dual_robot_cell_control start_robots.launch.py alice_use_mock_hardware:=true bob_use_mock_hardware:=true
+
+
 	Til bare at køre en interaktiv container:
 
 docker run -it --rm --runtime=nvidia --network=host     -v ~/P5-Dual-Arm:/home/P5-Dual-Arm     -u 1000:1000     ros2-jazzy:jetson
@@ -43,3 +52,12 @@ NOTE: lav mest edits på hostsystem og brug volumes til at få det i docker
 
 docker build -t ros2-jazzy:jetson .
 
+
+	For at bruge docker compose, virker dog kun i linux
+
+docker compose up
+
+	
+	For at komme ind i dockeren 
+
+docker exec -it p5-dual-arm-dual-arm-1 bash 

@@ -1,3 +1,3 @@
 #!/bin/bash
 
-ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur5e robot_ip:=192.168.56.102 headless_mode:=true
+ros2 launch my_dual_robot_cell_control start_robots.launch.py
