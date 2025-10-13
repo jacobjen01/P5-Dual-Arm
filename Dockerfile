@@ -19,12 +19,14 @@ RUN apt-get update && apt-get install -y \
 	ros-jazzy-ros2controlcli \
 	ros-jazzy-rqt \
 	ros-jazzy-moveit \
+	ros-jazzy-ros2-control \
 	python3-vcstool \
 	vim \
 	nano \
 	git \
 	iputils-ping \
 	python3-colcon-common-extensions \
+	x11-apps \
 	&& rm -rf /var/lib/apt/lists/*
 
 CMD xeyes
@@ -32,4 +34,5 @@ CMD xeyes
 SHELL ["/bin/bash", "-c"]
 RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc 
 
+#CMD ["bash", "source /opt/ros/jazzy/setup.bash", "cd home/P5-Dual-Arm", "source install/setup.bash"]
 CMD ["bash"]

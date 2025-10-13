@@ -7,6 +7,8 @@ services:
     environment:
       - DISPLAY=${DISPLAY}
     volumes:
+      - /dev/dri/:/dev/dri
+      - /tmp/.X11-unix:/tmp/.X11-unix
       - ~/Documents/AAU/Semester5/P5/P5-Dual-Arm:/home/P5-Dual-Arm
     user: "1000:1000"
     stdin_open: true  # equivalent to -it
