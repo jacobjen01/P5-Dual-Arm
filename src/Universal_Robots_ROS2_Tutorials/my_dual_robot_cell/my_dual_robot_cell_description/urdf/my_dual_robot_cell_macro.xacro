@@ -19,81 +19,44 @@
     bob_visual_parameters_file
     ">
 
-    <joint name="table_base_joint" type="fixed">
+    <joint name="mir_base_joint" type="fixed">
       <xacro:insert_block name="origin" />
       <parent link="${parent}" />
-      <child link="table" />
+      <child link="mir" />
     </joint>
 
-    <link name="table">
+    <link name="mir">
       <visual>
         <geometry>
-          <mesh filename="package://my_robot_cell_description/meshes/fzi_table.dae"/>
+          <mesh filename="package://my_robot_cell_description/meshes/Dual_Robot_Base.dae"/>
         </geometry>
-        <origin rpy="0 0 0" xyz="0.75 0.5 -1"/>
+        <origin rpy="1.570796 0 0" xyz="0 0 -0.70"/>
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://my_robot_cell_description/meshes/fzi_table.dae"/>
+          <mesh filename="package://my_robot_cell_description/meshes/Dual_Robot_Base.dae"/>
         </geometry>
-        <origin rpy="0 0 0" xyz="0.75 0.5 -1"/>
+        <origin rpy="1.570796 0 0" xyz="0 0 -0.70"/>
       </collision>
     </link>
-
-    <link name="monitor">
-      <visual>
-        <geometry>
-          <mesh filename="package://my_robot_cell_description/meshes/171005_Motek_Monitor_L.dae"/>
-        </geometry>
-      </visual>
-      <collision>
-        <geometry>
-          <mesh filename="package://my_robot_cell_description/meshes/171005_Motek_Monitor_L.dae"/>
-        </geometry>
-      </collision>
-    </link>
-    <joint name="base_to_monitor" type="fixed">
-      <parent link="table"/>
-      <child link="monitor"/>
-      <origin xyz="0.2 0.6 0"/>
-    </joint>
-
+   
     <material name="white">
       <color rgba="1 1 1 1"/>
     </material>
 
-    <link name="wall">
-      <visual>
-        <geometry>
-          <mesh filename="package://my_robot_cell_description/meshes/wall.dae"/>
-        </geometry>
-      </visual>
-      <collision>
-        <geometry>
-          <box size="4.44 0.1 2.5"/>
-        </geometry>
-      </collision>
-    </link>
-    <joint name="base_to_wall" type="fixed">
-      <parent link="table"/>
-      <child link="wall"/>
-      <origin xyz="1.25 1.5 0.5"/>
-    </joint>
-
-
     <!--Creates the mounts to attach the robots to the table-->
     <link name="alice_robot_mount"/>
     <joint name="base_to_alice_robot_mount" type="fixed">
-      <parent link="table"/>
+      <parent link="mir"/>
       <child link="alice_robot_mount"/>
-      <origin xyz="0.5 0.3 0" rpy="0 0 ${pi}" />
+      <origin xyz="0 -0.33 -0.3" rpy="0 0 ${pi}" />
     </joint>
   
     <link name="bob_robot_mount"/>
     <joint name="base_to_bob_robot_mount" type="fixed">
-      <parent link="table"/>
+      <parent link="mir"/>
       <child link="bob_robot_mount"/>
-      <origin xyz="1.2 0.3 0" rpy="0 0 ${pi}" />
+      <origin xyz="0 0.33 -0.3" rpy="0 0 ${pi}" />
     </joint>
 
     <!--Creates the 1st Robot-->
