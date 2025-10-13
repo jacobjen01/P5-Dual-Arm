@@ -61,3 +61,10 @@ docker compose up
 	For at komme ind i dockeren 
 
 docker exec -it p5-dual-arm-dual-arm-1 bash 
+
+	
+	For at checke at der er display i docker hvis øjnene kommer frem tryk Ctrl+c
+xeyes
+	
+	Hvis det retunere en fejl kør denne kommand
+xhost +local:root 

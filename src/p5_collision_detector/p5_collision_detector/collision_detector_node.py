@@ -10,14 +10,14 @@ class CollisionDetector(Node):
     def __init__(self):
         super().__init__('collision_detector_node')
 
-        self.WORLD_FRAME = "world_frame"
+        self.WORLD_FRAME = "mir"
 
-        self.ROBOT_A_CYL_FRAME_DATA = [("link2_shifted", "link3_shifted", 0.3), ("link3", "link4", 0.3),
-                                                           ("link5", "link6", 0.3), ("link6", "link_eef", 0.3)]
-        self.ROBOT_B_CYL_FRAME_DATA = [("link2_shifted", "link3_shifted", 0.3), ("link3", "link4", 0.3),
-                                                           ("link5", "link6", 0.3), ("link6", "link_eef", 0.3)]
+        self.ROBOT_A_CYL_FRAME_DATA = [("alice_upper_arm_link_shifted", "alice_forearm_link_shifted", 0.05), ("alice_forearm_link", "alice_wrist_1_link_shifted", 0.05),
+                                                           ("alice_wrist_1_link", "alice_wrist_2_link", 0.01), ("alice_wrist_2_link", "alice_wrist_3_link", 0.01)]
+        self.ROBOT_B_CYL_FRAME_DATA = [("bob_upper_arm_link_shifted", "bob_forearm_link_shifted", 0.05), ("bob_forearm_link", "bob_wrist_1_link_shifted", 0.05),
+                                                           ("bob_wrist_1_link", "bob_wrist_2_link", 0.01), ("bob_wrist_2_link", "bob_wrist_3_link", 0.01)]
 
-        self.SAFETY_MARGIN = 0.05 # Safety margin in meters. the minimum distance allowed between the two robots.
+        self.SAFETY_MARGIN = 0.1 # Safety margin in meters. the minimum distance allowed between the two robots.
 
         self.tf_buffer = Buffer()
 
@@ -25,7 +25,7 @@ class CollisionDetector(Node):
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
         self.timer_create_missing_tf_trees = self.create_timer(0.1, self.create_missing_joint_tf_trees)
-        self.timer_check_collision = self.create_timer(0.1, self.check_collision)
+        self.timer_check_collision = self.create_timer(0.1, self.detect_collision)
 
 
     """
@@ -53,8 +53,12 @@ class CollisionDetector(Node):
     Create the transformation trees which can be used to create a vector from joint 1 to joint 2
     """
     def create_missing_joint_tf_trees(self):
-        self._create_tf_tree("link2", "link2_shifted", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-        self._create_tf_tree("link3", "link3_shifted", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+        self._create_tf_tree("alice_upper_arm_link", "alice_upper_arm_link_shifted", [0.0, 0.0, 0.13, 0.0, 0.0, 0.0, 1.0])
+        self._create_tf_tree("alice_forearm_link", "alice_forearm_link_shifted", [0.0, 0.0, 0.13, 0.0, 0.0, 0.0, 1.0])
+        self._create_tf_tree("alice_wrist_1_link", "alice_wrist_1_link_shifted", [0.0, 0.0, -0.13, 0.0, 0.0, 0.0, 1.0])
+        self._create_tf_tree("bob_upper_arm_link", "bob_upper_arm_link_shifted", [0.0, 0.0, 0.13, 0.0, 0.0, 0.0, 1.0])
+        self._create_tf_tree("bob_forearm_link", "bob_forearm_link_shifted", [0.0, 0.0, 0.13, 0.0, 0.0, 0.0, 1.0])
+        self._create_tf_tree("bob_wrist_1_link", "bob_wrist_1_link_shifted", [0.0, 0.0, -0.13, 0.0, 0.0, 0.0, 1.0])
 
 
     """
@@ -73,7 +77,7 @@ class CollisionDetector(Node):
         except Exception as e:
             self.get_logger().error(f'Failed to get transform from {parent_name}/{child_name}: {e}')
 
-            return False
+            return []
 
 
     """
@@ -87,10 +91,10 @@ class CollisionDetector(Node):
             pos_parent = self._get_tf_tree_crd(self.WORLD_FRAME, parent_name)
             pos_child = self._get_tf_tree_crd(self.WORLD_FRAME, child_name)
 
-            if pos_parent and pos_child:
+            if len(pos_parent) > 0 and len(pos_child) > 0:
                  cylinder_desc.append([pos_parent, pos_child, radius])
             else:
-                return False
+                return []
 
         return cylinder_desc
 
@@ -131,7 +135,7 @@ class CollisionDetector(Node):
         cyl_2_begin_crd = cyl_2_crds[0]
 
         # Lines are parallel
-        if np.cross(cyl_1_vec, cyl_2_vec) == 0:
+        if np.linalg.norm(np.cross(cyl_1_vec, cyl_2_vec)) == 0:
             dist = np.linalg.norm(np.cross((cyl_1_begin_crd - cyl_2_begin_crd), cyl_1_vec)) / np.linalg.norm(cyl_1_vec)
             return self._check_length(dist, cyl_1_radius, cyl_2_radius)
 
@@ -195,12 +199,15 @@ class CollisionDetector(Node):
     def detect_collision(self):
         cylinder_desc_robot_1 = self._get_robot_cylinder_desc(self.ROBOT_A_CYL_FRAME_DATA)
         cylinder_desc_robot_2 = self._get_robot_cylinder_desc(self.ROBOT_B_CYL_FRAME_DATA)
+        
+        if len(cylinder_desc_robot_1) == 0 or len(cylinder_desc_robot_2) == 0:
+            return
 
         for cylinder_desc_1 in cylinder_desc_robot_1:
             for cylinder_desc_2 in cylinder_desc_robot_2:
                 if self._cylinder_detect_collision(cylinder_desc_1, cylinder_desc_2):
                     # Mangler publisher til protective_stop topic.
-                    pass
+                    self.get_logger().info("protective_stop")
                 else:
                     pass
 
