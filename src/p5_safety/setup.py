@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'p5_collision_detector'
+package_name = 'p5_safety'
 
 setup(
     name=package_name,
@@ -24,7 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'collision_detector_node = p5_collision_detector.collision_detector_node:main'
+            'collision_detector_node = p5_safety.collision_detector_node:main'
         ],
     },
 )
