@@ -2,14 +2,14 @@ version: '3.8'
 
 services:
   dual-arm:
-    image: test_ur:latest
+    image: p5_dual_arm:latest
     network_mode: host
     environment:
       - DISPLAY=${DISPLAY}
     volumes:
       - /dev/dri/:/dev/dri
       - /tmp/.X11-unix:/tmp/.X11-unix
-      - ~/Documents/AAU/Semester5/P5/P5-Dual-Arm:/home/P5-Dual-Arm
+      - ../P5-Dual-Arm:/home/P5-Dual-Arm
     user: "1000:1000"
     stdin_open: true  # equivalent to -it
     tty: true         # equivalent to -it
