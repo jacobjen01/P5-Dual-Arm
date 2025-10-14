@@ -2,8 +2,11 @@ import rclpy
 import numpy as np
 
 from rclpy.node import Node
-from geometry_msgs.msg import TransformStamped
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 from tf2_ros import TransformBroadcaster, Buffer, TransformListener
+from geometry_msgs.msg import TransformStamped
+from std_msgs.msg import Bool
+
 
 
 class CollisionDetector(Node):
@@ -23,6 +26,16 @@ class CollisionDetector(Node):
 
         self.tf_broadcaster = TransformBroadcaster(self)
         self.tf_listener = TransformListener(self.tf_buffer, self)
+
+        # QoS sat to focus on prioritizing the latest signal
+        protective_stop_publisher_qos = QoSProfile(
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.VOLATILE,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10
+        )
+
+        self.protective_stop_publisher = self.create_publisher(Bool, "protective_stop", protective_stop_publisher_qos)
 
         self.timer_create_missing_tf_trees = self.create_timer(0.1, self.create_missing_joint_tf_trees)
         self.timer_check_collision = self.create_timer(0.1, self.detect_collision)
@@ -203,13 +216,21 @@ class CollisionDetector(Node):
         if len(cylinder_desc_robot_1) == 0 or len(cylinder_desc_robot_2) == 0:
             return
 
+        msg = Bool()
+
         for cylinder_desc_1 in cylinder_desc_robot_1:
             for cylinder_desc_2 in cylinder_desc_robot_2:
+
                 if self._cylinder_detect_collision(cylinder_desc_1, cylinder_desc_2):
-                    # Mangler publisher til protective_stop topic.
-                    self.get_logger().info("protective_stop")
+                    msg.data = True
+                    self.protective_stop_publisher.publish(msg)
+                    
+                    return
                 else:
-                    pass
+                    continue
+
+        msg.data = False
+        self.protective_stop_publisher.publish(msg)
 
 
 def main(args=None):
