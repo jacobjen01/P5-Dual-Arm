@@ -8,7 +8,6 @@ from geometry_msgs.msg import TransformStamped
 from std_msgs.msg import Bool
 
 
-
 class CollisionDetector(Node):
     def __init__(self):
         super().__init__('collision_detector_node')
@@ -224,7 +223,7 @@ class CollisionDetector(Node):
                 if self._cylinder_detect_collision(cylinder_desc_1, cylinder_desc_2):
                     msg.data = True
                     self.protective_stop_publisher.publish(msg)
-                    
+
                     return
                 else:
                     continue
