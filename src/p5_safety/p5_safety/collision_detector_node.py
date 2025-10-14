@@ -7,6 +7,8 @@ from tf2_ros import TransformBroadcaster, Buffer, TransformListener
 from geometry_msgs.msg import TransformStamped
 from std_msgs.msg import Bool
 
+from p5_safety._error_handling import ErrorHandler
+
 
 class CollisionDetector(Node):
     def __init__(self):
@@ -20,6 +22,8 @@ class CollisionDetector(Node):
                                                            ("bob_wrist_1_link", "bob_wrist_2_link", 0.01), ("bob_wrist_2_link", "bob_wrist_3_link", 0.01)]
 
         self.SAFETY_MARGIN = 0.1 # Safety margin in meters. the minimum distance allowed between the two robots.
+
+        self.error_handler = ErrorHandler(self)
 
         self.tf_buffer = Buffer()
 
@@ -88,6 +92,8 @@ class CollisionDetector(Node):
 
         except Exception as e:
             self.get_logger().error(f'Failed to get transform from {parent_name}/{child_name}: {e}')
+            self.error_handler.report_error(self.error_handler.info, f'Failed to get transform from {parent_name}/{child_name}: {e}')
+
 
             return []
 
@@ -209,27 +215,32 @@ class CollisionDetector(Node):
     Check whether the system detects any collision. 
     """
     def detect_collision(self):
-        cylinder_desc_robot_1 = self._get_robot_cylinder_desc(self.ROBOT_A_CYL_FRAME_DATA)
-        cylinder_desc_robot_2 = self._get_robot_cylinder_desc(self.ROBOT_B_CYL_FRAME_DATA)
-        
-        if len(cylinder_desc_robot_1) == 0 or len(cylinder_desc_robot_2) == 0:
-            return
+        try:
+            cylinder_desc_robot_1 = self._get_robot_cylinder_desc(self.ROBOT_A_CYL_FRAME_DATA)
+            cylinder_desc_robot_2 = self._get_robot_cylinder_desc(self.ROBOT_B_CYL_FRAME_DATA)
 
-        msg = Bool()
+            if len(cylinder_desc_robot_1) == 0 or len(cylinder_desc_robot_2) == 0:
+                return
 
-        for cylinder_desc_1 in cylinder_desc_robot_1:
-            for cylinder_desc_2 in cylinder_desc_robot_2:
+            msg = Bool()
 
-                if self._cylinder_detect_collision(cylinder_desc_1, cylinder_desc_2):
-                    msg.data = True
-                    self.protective_stop_publisher.publish(msg)
+            for cylinder_desc_1 in cylinder_desc_robot_1:
+                for cylinder_desc_2 in cylinder_desc_robot_2:
 
-                    return
-                else:
-                    continue
+                    if self._cylinder_detect_collision(cylinder_desc_1, cylinder_desc_2):
+                        msg.data = True
+                        self.protective_stop_publisher.publish(msg)
 
-        msg.data = False
-        self.protective_stop_publisher.publish(msg)
+                        return
+                    else:
+                        continue
+
+            msg.data = False
+            self.protective_stop_publisher.publish(msg)
+
+        except Exception as e:
+            self.get_logger().error(f'Fatal error: {e}')
+            self.error_handler.report_error(self.error_handler.fatal, f'{e}')
 
 
 def main(args=None):
