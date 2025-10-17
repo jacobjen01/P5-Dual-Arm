@@ -1,3 +1,5 @@
+import os
+import yaml
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition, UnlessCondition
@@ -6,6 +8,20 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterFile
 from launch_ros.substitutions import FindPackageShare
+from moveit_configs_utils import MoveItConfigsBuilder
+from pathlib import Path
+from ament_index_python.packages import get_package_share_directory
+
+
+def load_yaml(package_name, file_path):
+    package_path = get_package_share_directory(package_name)
+    absolute_file_path = os.path.join(package_path, file_path)
+
+    try:
+        with open(absolute_file_path) as file:
+            return yaml.safe_load(file)
+    except OSError:  # parent of IOError, OSError *and* WindowsError where available
+        return None
 
 
 def launch_setup():
@@ -21,6 +37,7 @@ def launch_setup():
     controller_spawner_timeout = LaunchConfiguration("controller_spawner_timeout")
     description_launchfile = LaunchConfiguration("description_launchfile")
     launch_rviz = LaunchConfiguration("launch_rviz")
+    launch_servo = LaunchConfiguration("launch_servo")
     rviz_config_file = LaunchConfiguration("rviz_config_file")
     headless_mode = LaunchConfiguration("headless_mode")
 
@@ -149,6 +166,46 @@ def launch_setup():
         arguments=["-d", rviz_config_file],
     )
 
+    alice_moveit_config = (
+        MoveItConfigsBuilder(robot_name="alice", package_name="my_dual_robot_cell_moveit_config")
+        .robot_description_semantic(Path("config") / "my_dual_robot_cell.srdf", {"name": alice_ur_type})
+        .to_moveit_configs()
+    )
+
+    alice_servo_yaml = load_yaml("my_dual_robot_cell_control", "config/alice_servo.yaml")
+    alice_servo_params = {"moveit_servo": alice_servo_yaml}
+    alice_servo_node = Node(
+        package="moveit_servo",
+        namespace="alice",
+        condition=IfCondition(launch_servo),
+        executable="servo_node",
+        parameters=[
+            alice_moveit_config.to_dict(),
+            alice_servo_params,
+        ],
+        output="screen",
+    )
+
+    bob_moveit_config = (
+        MoveItConfigsBuilder(robot_name="bob", package_name="my_dual_robot_cell_moveit_config")
+        .robot_description_semantic(Path("config") / "my_dual_robot_cell.srdf", {"name": bob_ur_type})
+        .to_moveit_configs()
+    )
+
+    bob_servo_yaml = load_yaml("my_dual_robot_cell_control", "config/bob_servo.yaml")
+    bob_servo_params = {"moveit_servo": bob_servo_yaml}
+    bob_servo_node = Node(
+        package="moveit_servo",
+        namespace="bob",
+        condition=IfCondition(launch_servo),
+        executable="servo_node",
+        parameters=[
+            bob_moveit_config.to_dict(),
+            bob_servo_params,
+        ],
+        output="screen",
+    )
+
     # Spawn controllers
     def controller_spawner(controllers, active=True):
         inactive_flags = ["--inactive"] if not active else []
@@ -255,6 +312,8 @@ def launch_setup():
         bob_urscript_interface,
         rsp,
         rviz_node,
+       # alice_servo_node,
+        bob_servo_node,
         alice_initial_joint_controller_spawner_stopped,
         bob_initial_joint_controller_spawner_stopped,
         alice_initial_joint_controller_spawner_started,
@@ -423,6 +482,9 @@ def generate_launch_description():
         DeclareLaunchArgument(
             "launch_rviz", default_value="true", description="Launch RViz?"
         )
+    )
+    declared_arguments.append(
+            DeclareLaunchArgument("launch_servo", default_value="true", description="Launch Servo?")
     )
     declared_arguments.append(
         DeclareLaunchArgument(
