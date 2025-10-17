@@ -230,10 +230,11 @@ def launch_setup():
         "bob_speed_scaling_state_broadcaster",
         "alice_force_torque_sensor_broadcaster",
         "bob_force_torque_sensor_broadcaster",
-    ]
-    controllers_inactive = [
         "alice_forward_position_controller",
         "bob_forward_position_controller",
+    ]
+    controllers_inactive = [
+
     ]
 
     controller_spawners = [controller_spawner(controllers_active)] + [
@@ -307,13 +308,13 @@ def launch_setup():
         alice_dashboard_client_node,
         bob_dashboard_client_node,
         alice_controller_stopper_node,
+        alice_servo_node,
         bob_controller_stopper_node,
+        bob_servo_node,
         alice_urscript_interface,
         bob_urscript_interface,
         rsp,
         rviz_node,
-       # alice_servo_node,
-        bob_servo_node,
         alice_initial_joint_controller_spawner_stopped,
         bob_initial_joint_controller_spawner_stopped,
         alice_initial_joint_controller_spawner_started,
