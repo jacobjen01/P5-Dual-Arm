@@ -11,6 +11,8 @@ ros2 launch my_dual_robot_cell_control start_robots.launch.py alice_use_mock_har
 
 docker run -it --rm --runtime=nvidia --network=host     -v ~/P5-Dual-Arm:/home/P5-Dual-Arm     -u 1000:1000     ros2-jazzy:jetson
 
+    Windows:
+docker run -it --rm --runtime=nvidia --network=host     -v ../P5-Dual-Arm:/home/P5-Dual-Arm     -u 1000:1000     ros2-jazzy:jetson
 
 
 	Til at bede om en container i baggrunden:
