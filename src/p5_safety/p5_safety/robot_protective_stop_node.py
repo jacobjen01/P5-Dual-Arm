@@ -1,6 +1,6 @@
 import rclpy
 import numpy as np
-from p5_safety._error_handling import ErrorHandler
+#from p5_safety._error_handling import ErrorHandler
 
 from rclpy.node import Node
 from std_msgs.msg import Bool
@@ -11,7 +11,7 @@ class RobotProtectiveStop(Node):
     def __init__(self):
         super().__init__('robot_protective_stop')
 
-        self.error_handler = ErrorHandler(self)
+        #self.error_handler = ErrorHandler(self)
 
         self.tf_buffer = Buffer()
 
@@ -41,7 +41,7 @@ class RobotProtectiveStop(Node):
         self.protective_stop_alice = None
         self.protective_stop_bob = None
 
-        self.timer = self.create_timer(0.1, self.timer_callback)  
+        #self.timer = self.create_timer(0.1, self.timer_callback)  
 
         self.get_logger().info("Robot Protective Stop node started.")
 
@@ -60,7 +60,7 @@ class RobotProtectiveStop(Node):
 
             except Exception as e:
                 self.get_logger().error(f'Failed to get transform from {parent_name}/{child_name}: {e}')
-                self.error_handler.report_error(self.error_handler.info, f'Failed to get transform from {parent_name}/{child_name}: {e}')
+                #self.error_handler.report_error(self.error_handler.info, f'Failed to get transform from {parent_name}/{child_name}: {e}')
 
 
                 return []
@@ -101,7 +101,7 @@ class RobotProtectiveStop(Node):
         if msg.data and not self.protective_stop_active:
             self.protective_stop_active = True
             self.get_logger().warn("Protective stop triggered! Freezing current TF pose permanently.")
-            self.error_handler.report_error(self.error_handler.info, f'Protective stop triggered! Freezing current TF pose permanently.')
+            #self.error_handler.report_error(self.error_handler.info, f'Protective stop triggered! Freezing current TF pose permanently.')
 
             self.protective_stop_alice = self._get_tf_tree_pose("alice_base_frame", "alice_end_effector_frame") 
             self.protective_stop_bob = self._get_tf_tree_pose("bob_base_frame", "bob_end_effector_frame")

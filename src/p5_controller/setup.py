@@ -25,7 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'template = p5_controller.template:main',
-            'home = p5_controller.home:main'
+            'home = p5_controller.home:main',
         ],
     },
 )
