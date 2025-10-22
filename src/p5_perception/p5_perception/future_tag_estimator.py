@@ -5,6 +5,7 @@ from rclpy.qos import QoSProfile
 from tf2_msgs.msg import TFMessage
 from collections import deque
 import math
+from p5_interfaces.msg import Tagvector
 
 class FutureTagEstimator(Node):
     def __init__(self):
@@ -22,7 +23,7 @@ class FutureTagEstimator(Node):
 
         qos = QoSProfile(depth=qos_depth)
 
-        self.publisher = self.create_publisher(TFMessage, output_topic, qos)
+        self.publisher = self.create_publisher(Tagvector, output_topic, qos)
         
         self.subscription = self.create_subscription(
             TFMessage,
@@ -100,8 +101,15 @@ class FutureTagEstimator(Node):
             # optional short log per tag
             self.get_logger().info(f"Tag {tag_key} motion -> dir: {direction}, speed: {speed:.4f} m/s")
 
-        #self.get_logger().info(f"Current tag poses: {self.tag_poses}")
+        for tag_key in self.tag_motion:
+            msg = Tagvector()
+            msg.tag_id = int(tag_key)
+            msg.vx = self.tag_motion[tag_key]['direction'][0]
+            msg.vy = self.tag_motion[tag_key]['direction'][1]
+            msg.vz = self.tag_motion[tag_key]['direction'][2]
+            self.publisher.publish(msg)
 
+        #self.get_logger().info(f"Current tag poses: {self.tag_poses}")
 
 def main(args=None):
     rclpy.init(args=args)
