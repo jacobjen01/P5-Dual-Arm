@@ -39,16 +39,16 @@ class ControllerManager(Node):
 TRAJECTORIES = {
     "alice_home": [
         {
-            "positions": [math.pi/2, -math.pi/4, -math.pi/1.2, -math.pi/2, math.pi/2, 0],
+            "positions": [0, -math.pi*3/4, math.pi/1.2, -math.pi/2, -math.pi/2, 0],
             "velocities": [0, 0, 0, 0, 0, 0],
-            "time_from_start": Duration(sec=20, nanosec=0),
+            "time_from_start": Duration(sec=2, nanosec=0),
         },
     ],
     "bob_home": [
         {
-            "positions": [-math.pi/2, -math.pi/4, -math.pi/1.2, -math.pi/2, math.pi/2, 0],
+            "positions": [math.pi, -math.pi/4, -math.pi/1.2, -math.pi/2, math.pi/2, 0],
             "velocities": [0, 0, 0, 0, 0, 0],
-            "time_from_start": Duration(sec=20, nanosec=0),
+            "time_from_start": Duration(sec=2, nanosec=0),
         },
     ],
 }

@@ -4,8 +4,8 @@
   <name>p5_perception</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="ubuntu@todo.todo">ubuntu</maintainer>
-  <license>Apache-2.0</license>
+  <maintainer email="jacobjen01@gmail.com">jacob</maintainer>
+  <license>TODO: License declaration</license>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
