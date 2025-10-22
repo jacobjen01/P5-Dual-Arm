@@ -3,7 +3,7 @@ import yaml
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition, UnlessCondition
-from launch.launch_description_sources import AnyLaunchDescriptionSource
+from launch.launch_description_sources import AnyLaunchDescriptionSource, PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterFile
@@ -303,6 +303,17 @@ def launch_setup():
         }.items(),
     )
 
+    # Include robot_commands_listener.launch.py
+    robot_listener_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('p5_controller'),
+                'launch',
+                'robot_commands_listener.launch.py'
+            )
+        )
+    )
+
     nodes_to_start = [
         control_node,
         alice_dashboard_client_node,
@@ -319,6 +330,7 @@ def launch_setup():
         bob_initial_joint_controller_spawner_stopped,
         alice_initial_joint_controller_spawner_started,
         bob_initial_joint_controller_spawner_started,
+        robot_listener_launch,
     ] + controller_spawners
 
     return nodes_to_start
