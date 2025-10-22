@@ -21,6 +21,9 @@ setup(
     entry_points={
         'console_scripts': [
             'future_tag_estimator = p5_perception.future_tag_estimator:main',
+            'future_tag_estimator_quick = p5_perception.future_tag_estimator_quick:main',
+            'future_tag_estimator_with_timing = p5_perception.future_tag_estimator_with_timing:main',
+            'future_tag_estimator_quick_with_timing = p5_perception.future_tag_estimator_quick_with_timing:main',
         ],
     },
 )
