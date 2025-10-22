@@ -39,9 +39,16 @@ RUN apt-get update && apt-get install -y \
 	ros-jazzy-ur \
 	ros-jazzy-ros2controlcli \
 	ros-jazzy-rqt \
+	ros-jazzy-rqt-graph \
 	ros-jazzy-moveit \
+	ros-jazzy-moveit-servo \
 	ros-jazzy-ros2-control \
+	ros-jazzy-controller-manager \
 	python3-vcstool \
+	libeigen3-dev \
+	libopencv-dev \
+	libboost-all-dev \
+	libpcl-dev \
 	vim \
 	nano \
 	git \
