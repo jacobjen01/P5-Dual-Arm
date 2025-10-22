@@ -317,6 +317,7 @@ class RelativeMover(Node):
         new_pose = np.concatenate([new_crd, new_quat])
         return new_pose
 
+
 def main(args=None):
     rclpy.init(args=args)
     node = RelativeMover()

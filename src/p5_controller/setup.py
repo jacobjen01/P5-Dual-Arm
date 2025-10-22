@@ -24,7 +24,9 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'template = p5_controller.template:main'
+            'template = p5_controller.template:main',
+            'home = p5_controller.home:main',
+            'relative_mover = p5_controller.relative_mover_node:main',
         ],
     },
 )
