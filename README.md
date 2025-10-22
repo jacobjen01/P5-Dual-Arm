@@ -1,26 +1,62 @@
 # P5-Dual-Arm
 Semester project P5 gruppe 141 AAU Dual Arm Beer Buddy
 
-## Docker
-The whole system runs in a docker container which can easily be started using. It is only for linux though.
+## Prerequisites
+This system is designed for Linux only and requires Docker with Compose v2.
+
+### Installing Docker and Docker Compose v2
+1. Install Docker:
+```bash
+sudo apt update
+sudo apt install docker.io
 ```
-docker compose up
+
+2. Add your user to the docker group (to run Docker without sudo):
+```bash
+sudo usermod -aG docker $USER
 ```
-For docker compose to work both docker and docker-compose-v2 has to be installed.
-If the container has not been build then it can be build with the following command.
+
+3. Install Docker Compose v2:
+```bash
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
 ```
+
+4. **Important:** Log out and log back in (or restart) for the docker group membership to take effect.
+
+5. Verify installation:
+```bash
+docker --version
+docker compose version
+```
+
+## Docker Setup
+The whole system runs in a docker container. Follow these steps:
+
+### 1. Build the Docker Image
+Before running for the first time, build the Docker image:
+```bash
 docker build -t p5_dual_arm .
 ```
-To get a display in the container run.
+
+### 2. Start the Container
+```bash
+docker compose up
 ```
+
+### 3. Enable Display Support
+To get GUI applications working in the container, run this command **after** the container is up:
+```bash
 xhost +local:root 
 ```
-This can be done after the container is up.
-To test if the display is working try to run.
-```
+
+### 4. Test Display
+To verify that the display is working, enter the container and test:
+```bash
+docker exec -it p5-dual-arm-dual-arm-1 bash
 xeyes
 ```
-This should show a pair of eyes press Ctrl to close it again.
+This should show a pair of eyes. Press Ctrl+C to close it again.
 
 
 

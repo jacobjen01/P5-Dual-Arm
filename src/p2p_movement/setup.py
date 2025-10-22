@@ -27,6 +27,7 @@ setup(
             'home = p2p_movement.home:main',
             'bob_example = p2p_movement.bob_example:main',
             'alice_example = p2p_movement.alice_example:main',
+            'cancel_goal_example = p2p_movement.cancel_goal_example:main',
         ],
     },
 )
