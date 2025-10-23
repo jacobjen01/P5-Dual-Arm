@@ -1,7 +1,7 @@
 import os
 import yaml
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable
 from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import AnyLaunchDescriptionSource, PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
@@ -315,6 +315,7 @@ def launch_setup():
     )
 
     nodes_to_start = [
+        SetEnvironmentVariable('ROS_DOMAIN_ID', '69'),
         control_node,
         alice_dashboard_client_node,
         bob_dashboard_client_node,
