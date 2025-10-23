@@ -10,6 +10,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/p5_controller/launch', ['launch/robot_commands_listener.launch.py'])
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -25,7 +26,7 @@ setup(
     entry_points={
         'console_scripts': [
             'template = p5_controller.template:main',
-            'home = p5_controller.home:main'
+            'home = p5_controller.home:main',
         ],
     },
 )
