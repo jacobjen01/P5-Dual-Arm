@@ -8,6 +8,7 @@ import math
 from p5_interfaces.msg import Tagvector
 from geometry_msgs.msg import TransformStamped
 from tf2_ros import TransformBroadcaster, Buffer
+import numpy as np
 
 class FutureTagEstimator(Node):
     def __init__(self):
@@ -65,6 +66,22 @@ class FutureTagEstimator(Node):
 
         self.tf_broadcaster.sendTransform(t)
 
+    def get_tf_tree_crd(self, parent_name, child_name):
+        try:
+            now = rclpy.time.Time()
+            trans = self.tf_buffer.lookup_transform(parent_name, child_name, now)
+
+            crd = np.array([trans.transform.translation.x, trans.transform.translation.y,
+                            trans.transform.translation.z])
+
+            return crd
+
+        except Exception as e:
+            self.get_logger().error(f'Failed to get transform from {parent_name}/{child_name}: {e}')
+            self.error_handler.report_error(self.error_handler.info, f'Failed to get transform from {parent_name}/{child_name}: {e}')
+
+            return []
+
     def time_to_sec(self, stamp):
         # Timestampen kommer fra builtin_interfaces.msg.Time som har to fields: sec og nanosec
         # Derfor skal vi kombinere dem til en enkelt float værdi i sekunder.
@@ -111,10 +128,14 @@ class FutureTagEstimator(Node):
             else:
                 tag_key = child.replace('/', '_')                           # Håndterer andre frame navne
 
+            crd = self.get_tf_tree_crd("alice_base_link", child)            # Opdaterer transform for tag i forhold til alice_base_link
+            if len(crd) == 0:
+                continue
+            tx, ty, tz = crd
             # Tildeler variabler til positions komponenter
-            tx = transform.transform.translation.x
-            ty = transform.transform.translation.y
-            tz = transform.transform.translation.z
+            #tx = transform.transform.translation.x
+            #ty = transform.transform.translation.y
+            #tz = transform.transform.translation.z
             #qx = transform.transform.rotation.x
             #qy = transform.transform.rotation.y
             #qz = transform.transform.rotation.z
@@ -141,8 +162,8 @@ class FutureTagEstimator(Node):
             # Logger bevægelsesinfo
             self.get_logger().info(f"Tag {tag_key} motion -> dir: ({direction[0]:.3f}, {direction[1]:.3f}, {direction[2]:.3f}), speed: {speed:.3f} m/s")
 
-            self.create_tf_tree(child, "Grabpoint_1", (0.22, 0.0, -0.0815, 0.0, 0.0, 0.0, 1.0))
-            self.create_tf_tree(child, "Grabpoint_2", (-0.22, 0.0, -0.0815, 0.0, 0.0, 0.0, 1.0))
+            # self.create_tf_tree(child, "Grabpoint_1", (0.22, 0.0, -0.0815, 0.0, 0.0, 0.0, 1.0))
+            # self.create_tf_tree(child, "Grabpoint_2", (-0.22, 0.0, -0.0815, 0.0, 0.0, 0.0, 1.0))
 
             # Publicerer
             msg_out = Tagvector()
