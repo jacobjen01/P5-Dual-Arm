@@ -244,7 +244,7 @@ class RelativeMover(Node):
                                             f'Error: {e}')
 
     """
-    Helper function to get estimated goal pose in respect to base frame of robot, for robot to move to.
+    Helper function to get estimated goal pose in respect to base frame of robot, for robot to move to
     """
     def _get_estimated_goal_pose(self):
         vec = np.array(self.goal_pose_rel_base_frame[0:3]) - np.array(self.ee_pose_rel_base_frame[0:3])
