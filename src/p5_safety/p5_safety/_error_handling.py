@@ -18,7 +18,7 @@ class ErrorHandler:
         if severity in self.SEVERITIES:
             error = Error()
 
-            error.time = self.node.get_clock().now().to_msg()
+            error.stamp = self.node.get_clock().now().to_msg()
             error.node_name = self.node.get_name()
             error.severity = severity
             error.message = message
@@ -28,7 +28,7 @@ class ErrorHandler:
         else:
             error = Error()
 
-            error.time = self.node.get_clock().now().to_msg()
+            error.stamp = self.node.get_clock().now().to_msg()
             error.node_name = self.node.get_name()
             error.severity = self.error
             error.message = f"Definition of error was not correct. Severity can only be {self.SEVERITIES} and not {severity}. Error message: {message}"

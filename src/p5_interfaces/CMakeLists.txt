@@ -11,11 +11,8 @@ find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-<<<<<<< HEAD
   "msg/Error.msg"
-=======
   "msg/Tagvector.msg"
->>>>>>> dcc0d434b9e9e36dcca7693093f37ea9f5d2eeea
   "srv/MoveToPose.srv"
   "srv/SetLinearMovement.srv"
   "srv/SetReferenceFrame.srv"
