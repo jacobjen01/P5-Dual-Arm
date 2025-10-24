@@ -1,12 +1,13 @@
 import rclpy
 import numpy as np
-from scipy.spatial.transform import Rotation as R
+from scipy.spatial.transform import Rotation as R, Slerp
 
 from rclpy.node import Node
 from tf2_ros import TransformBroadcaster, Buffer, TransformListener
 from p5_safety._error_handling import ErrorHandler
 
-from geometry_msgs.msg import Pose, String, TransformStamped
+from geometry_msgs.msg import Pose, TransformStamped, PoseStamped
+from std_msgs.msg import String
 from p5_interfaces.srv import MoveToPose, SetLinearMovement, SetReferenceFrame
 
 
@@ -15,9 +16,10 @@ class RelativeMover(Node):
         super().__init__('relative_mover_node')
 
         self.MAX_VELOCITY = 0.2 # 200 mm/s
-        self.ACCELERATION = 0.5 # 500 mm/s^2
+        self.ACCELERATION = 5.0 # 500 mm/s^2
         self.INTERP_ITERATIONS = 10 # number of times the point estimator should update.
-        self.UPDATE_RATE = 20 # Number of times the system shall update per second
+        self.UPDATE_RATE = 100 # Number of times the system shall update per second
+        self.LIN_PREDICTOR_STEP_MULTIPLIER = 5 # How far forward the point shall be sat for servo
 
         self.error_handler = ErrorHandler(self)
 
@@ -29,74 +31,95 @@ class RelativeMover(Node):
         self.declare_parameter('robot_prefix', 'alice')
         self.robot_prefix = self.get_parameter('robot_prefix').get_parameter_value().string_value
 
+
         self.linear_movement = False
         self.linear_movement_use_tracking_velocity = False
         self.reference_frame = None
 
+        self.timer_create_goal_frame = None
+        self.timer_get_goal_pose_respect_to_base = None
+
         self.goal_pose_rel_target_frame = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
         self.goal_pose_rel_base_frame = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
         self.ee_pose_rel_base_frame = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
-        self.ee_pose_rel_base_frame_start_pose = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+        self.ee_pose_rel_base_frame_start_frame = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
 
         self.goal_pose_velocity = np.array([0.0, 0.0, 0.0])
         self.robot_velocity = np.array([0.0, 0.0, 0.0])
+        self.robot_theoretical_velocity = 0.0
+        self.previous_robot_poses = []
 
-        self.pose_publisher = self.create_publisher(Pose, f"{self.robot_prefix}_robot_pose_for_admittance_control", 10)
+        self.i = 0
 
-        self.set_linear_movement_service = self.create_service(SetLinearMovement, 'set_linear_movement', self.set_linear_movement_callback)
+        self.pose_publisher = self.create_publisher(PoseStamped, f"{self.robot_prefix}/servo_node/pose_target_cmds", 10) #f"{self.robot_prefix}_robot_pose_for_admittance_control"
+
+        # self.set_linear_movement_service = self.create_service(SetLinearMovement, 'set_linear_movement', self.set_linear_movement_callback)
+        # self.set_tf_tree_service = self.create_service(SetReferenceFrame, 'set_reference_frame', self.set_reference_frame_callback)
         self.move_to_pose_service = self.create_service(MoveToPose, 'move_to_pose', self.move_to_pose_callback)
-        self.set_tf_tree_service = self.create_service(SetReferenceFrame, 'set_reference_frame', self.set_reference_frame_callback)
 
-        self.timer_create_goal_frame = self.create_timer(1 / self.UPDATE_RATE, self.create_current_goal_frame)
-        self.timer_get_goal_pose_respect_to_base = self.create_timer(1 / self.UPDATE_RATE, self.get_goal_pose_respect_to_base)
-        self.timer_get_ee_pose_respect_to_base = self.create_timer(1 / self.UPDATE_RATE, self.get_ee_pose_respect_to_base)
+        self.timer_get_ee_pose_respect_to_base = self.create_timer(1 / self.UPDATE_RATE,
+                                                                   self.get_ee_pose_respect_to_base)
 
-    """
-    Function callback from service to determine if the robot shall move in cartesian or joint space.  
-    """
-    def set_linear_movement_callback(self, request, response):
-        try:
-            self.linear_movement = request.linear
-            self.linear_movement_use_tracking_velocity = request.use_tracking_velocity
-
-            response.resp = True
-            return response
-
-        except Exception as e:
-            self.getlogger().error(e)
-            self.error_handler.report_error(self.error_handler.fatal, f"Failed to send true response. Error: {e}")
-
-            response.resp = False
-            return response
-
-    """
-    Function to set the reference frame, the robot shall move in respect to.
-    """
-    def set_reference_frame_callback(self, request, response):
-        self.reference_frame = None
-        try:
-            self.reference_frame = request.frame
-
-            response.resp = True
-            return response
-
-        except Exception as e:
-            self.getlogger().error(e)
-            self.error_handler.report_error(self.error_handler.fatal, f"Failed to send true response. Error: {e}")
-
-            response.resp = False
-            return response
+    # """
+    # Function callback from service to determine if the robot shall move in cartesian or joint space.
+    # """
+    # def set_linear_movement_callback(self, request, response):
+    #     try:
+    #         self.linear_movement = request.linear
+    #         self.linear_movement_use_tracking_velocity = request.use_tracking_velocity
+    #
+    #         self.get_logger().info(f"Received request for linear movement {self.linear_movement}, {self.linear_movement_use_tracking_velocity}")
+    #
+    #         response.resp = True
+    #         return response
+    #
+    #     except Exception as e:
+    #         self.get_logger().error(e)
+    #         self.error_handler.report_error(self.error_handler.fatal, f"Failed to send true response. Error: {e}")
+    #
+    #         response.resp = False
+    #         return response
+    #
+    # """
+    # Function to set the reference frame, the robot shall move in respect to.
+    # """
+    # def set_reference_frame_callback(self, request, response):
+    #     self.reference_frame = None
+    #     try:
+    #         self.reference_frame = request.frame
+    #
+    #         self.get_logger().info(f"Received request for reference frame {self.reference_frame}")
+    #
+    #         response.resp = True
+    #         return response
+    #
+    #     except Exception as e:
+    #         self.get_logger().error(e)
+    #         self.error_handler.report_error(self.error_handler.fatal, f"Failed to send true response. Error: {e}")
+    #
+    #         response.resp = False
+    #         return response
 
     """
     Function callback to execute linear movement.
     """
     def move_to_pose_callback(self, request, response):
         try:
-            pos = request.transform.translation
-            quat = request.transform.orientation
+            self.linear_movement = request.linear
+            self.linear_movement_use_tracking_velocity = request.use_tracking_velocity
+            self.reference_frame = request.frame
+
+            pos = request.pose.position
+            quat = request.pose.orientation
 
             self.goal_pose_rel_target_frame = [pos.x, pos.y, pos.z, quat.x, quat.y, quat.z, quat.w]
-            self.ee_pose_rel_base_frame_start_pose = self.ee_pose_rel_base_frame.copy()
+            self.ee_pose_rel_base_frame_start_frame = self.ee_pose_rel_base_frame.copy()
+
+            self.get_logger().info(f"Received request for pose {self.goal_pose_rel_target_frame}")
+
+            self.timer_create_goal_frame = self.create_timer(1 / self.UPDATE_RATE, self.create_current_goal_frame)
+            self.timer_get_goal_pose_respect_to_base = self.create_timer(1 / self.UPDATE_RATE,
+                                                                         self.get_goal_pose_respect_to_base)
 
             self.timer_move_robot = self.create_timer(1/self.UPDATE_RATE, self.move_to_pose)
 
@@ -113,8 +136,6 @@ class RelativeMover(Node):
     """
     Callback functions for topics containing value about robot velocity and goal velocity.
     """
-    def get_robot_velocity_callback(self):
-        pass
 
     def get_goal_velocity_callback(self):
         pass
@@ -144,9 +165,9 @@ class RelativeMover(Node):
             self.tf_broadcaster.sendTransform(t)
 
         except Exception as e:
-            self.get_logger().error(f'Failed to get transform from {self.reference_frame}"/{self.robot_prefix}_goal_frame: {e}')
+            self.get_logger().error(f'Failed to create transform from {self.reference_frame}"/{self.robot_prefix}_goal_frame: {e}')
             self.error_handler.report_error(self.error_handler.info,
-                                            f'Failed to get transform from {self.reference_frame}"/{self.robot_prefix}_goal_frame: {e}')
+                                            f'Failed to create transform from {self.reference_frame}"/{self.robot_prefix}_goal_frame: {e}')
 
     """
     Helper function goal pose respect to base frame.
@@ -158,7 +179,7 @@ class RelativeMover(Node):
                                                     now)
 
             crd = trans.transform.translation
-            quat = trans.orientation.orientation
+            quat = trans.transform.rotation
 
             self.goal_pose_rel_base_frame = [crd.x, crd.y, crd.z, quat.x, quat.y, quat.z, quat.w]
 
@@ -174,12 +195,22 @@ class RelativeMover(Node):
     def get_ee_pose_respect_to_base(self):
         try:
             now = rclpy.time.Time()
-            trans = self.tf_buffer.lookup_transform(f"{self.robot_prefix}_base_link", f"{self.robot_prefix}_tool0", now)
+            t = self.tf_buffer.lookup_transform(f"{self.robot_prefix}_base_link", f"{self.robot_prefix}_tool0", now)
 
-            crd = trans.transform.translation
-            quat = trans.orientation.orientation
+            crd = t.transform.translation
+            quat = t.transform.rotation
+
 
             self.ee_pose_rel_base_frame = [crd.x, crd.y, crd.z, quat.x, quat.y, quat.z, quat.w]
+
+            self.previous_robot_poses.append(np.array(self.ee_pose_rel_base_frame.copy())[0:3])
+
+            if len(self.previous_robot_poses) >= self.UPDATE_RATE * 0.5:
+                self.previous_robot_poses.pop(0)
+
+            vec = self.previous_robot_poses[-1] - self.previous_robot_poses[0]
+
+            self.robot_velocity = vec[0:3] / 0.5
 
         except Exception as e:
             self.get_logger().error(
@@ -261,60 +292,110 @@ class RelativeMover(Node):
     Publishes goal pose
     """
     def _publish_pose(self, pose):
-        t = Pose()
+        # t = Pose()
+        #
+        # t.position.x = pose[0]
+        # t.position.y = pose[1]
+        # t.position.z = pose[2]
+        # t.orientation.x = pose[3]
+        # t.orientation.y = pose[4]
+        # t.orientation.z = pose[5]
+        # t.orientation.w = pose[6]
+        #
+        # self.pose_publisher.publish(t)
 
-        t.transform.translation.x = pose[0]
-        t.transform.translation.y = pose[1]
-        t.transform.translation.z = pose[2]
-        t.transform.rotation.x = pose[3]
-        t.transform.rotation.y = pose[4]
-        t.transform.rotation.z = pose[5]
-        t.transform.rotation.w = pose[6]
+        pose_goal = PoseStamped()
+        pose_goal.header.frame_id = "alice_base_link"  # "link_base"
 
-        self.pose_publisher.publish(t)
+        pose_goal.pose.position.x = pose[0]
+        pose_goal.pose.position.y = pose[1]
+        pose_goal.pose.position.z = pose[2]
+        pose_goal.pose.orientation.x = pose[3]
+        pose_goal.pose.orientation.y = pose[4]
+        pose_goal.pose.orientation.z = pose[5]
+        pose_goal.pose.orientation.w = pose[6]
+
+        pose_goal.header.stamp = self.get_clock().now().to_msg()
+        self.pose_publisher.publish(pose_goal)
 
     """
     Linear motion_predictor
     """
-    def _linear_motion_predictor(self, pose_rel_to_base):
-        crd_ee_start = np.array(self.ee_pose_rel_base_frame_start_pose[0:3])
+    def _linear_motion_predictor(self, goal_pose_rel_base_frame):
+        crd_ee_start = np.array(self.ee_pose_rel_base_frame_start_frame[0:3])
         crd_ee = np.array(self.ee_pose_rel_base_frame[0:3])
-        crd_goal = np.array(pose_rel_to_base[0:3])
-        quat_ee_start = np.array(self.ee_pose_rel_base_frame_start_pose[3:7])
-        quat_goal = np.array(pose_rel_to_base[3:7])
+        crd_goal = np.array(goal_pose_rel_base_frame[0:3])
+        quat_ee = np.array(self.ee_pose_rel_base_frame[3:7])
+        quat_goal = np.array(goal_pose_rel_base_frame[3:7])
+
+        # self.get_logger().info(f"crd_ee_start: {crd_ee_start}, crd_ee: {crd_ee}, crd_goal: {crd_goal}, quat_ee_start: {quat_ee_start}, quat_goal: {quat_goal}")
 
         dist = np.linalg.norm(crd_goal - crd_ee)
-        vel = np.linalg.norm(self.robot_velocity)
 
-        percentage_moved = dist / np.linalg.norm(crd_ee_start - crd_goal)
+        vel = np.linalg.norm(self.robot_velocity) #self.robot_theoretical_velocity
 
-        if dist <= 1/2 * self.MAX_VELOCITY**2 / self.ACCELERATION:
-            de_acceleration = vel**2 / (2*dist)
+        if dist < 0.01:
+            return np.concatenate([crd_goal, quat_goal])
 
-            forward_factor = vel * 1/self.UPDATE_RATE - de_acceleration * (1/self.UPDATE_RATE)**2
+        if dist <= 1/2 * vel**2 / self.ACCELERATION:
+            a = vel**2 / (2*dist) * -1
+            v = vel
 
         elif vel >= self.MAX_VELOCITY:
-            forward_factor = self.MAX_VELOCITY * 1/self.UPDATE_RATE
+            a = 0
+            v = self.MAX_VELOCITY
 
         else:
-            forward_factor = vel * 1/self.UPDATE_RATE + self.ACCELERATION * (1/self.UPDATE_RATE)**2
+            v = vel
+            a = self.ACCELERATION
 
-        new_crd = crd_ee + (crd_goal - crd_ee) * forward_factor / dist
+        step = v * 1 / self.UPDATE_RATE + 1 / 2 * a * (1 / self.UPDATE_RATE) ** 2
+        frac = 1 - dist / np.linalg.norm(crd_goal-crd_ee_start)
 
-        r_base_ee_start = R.from_quat([quat_ee_start])
-        r_base_goal = R.from_quat([quat_goal])
+        frac = float(np.clip(frac, 0.0, 1.0))
 
-        r_ee_goal = np.linalg.norm(r_base_ee_start.as_matrix()) @ r_base_goal.as_matrix()
-        euler_ee_goal = R.from_matrix(r_ee_goal).as_euler('xyz')
+        new_crd = crd_ee + (crd_goal - crd_ee) / dist * step * self.LIN_PREDICTOR_STEP_MULTIPLIER
 
-        euler_ee_cp = euler_ee_goal * percentage_moved
+        self.robot_theoretical_velocity += a * (1/self.UPDATE_RATE)
 
-        r_ee_cp = R.from_euler('xyz', euler_ee_cp)
-        r_base_cp = r_ee_cp.as_matrix() @ r_base_goal.as_matrix()
+        quat_ee /= np.linalg.norm(quat_ee) + 1e-16
+        quat_goal /= np.linalg.norm(quat_goal) + 1e-16
 
-        new_quat = R.from_matrix(r_base_cp).as_quat()
+        if np.dot(quat_ee, quat_goal) < 0.0:
+            quat_goal = -quat_goal
+
+        r_pair = R.from_quat(np.vstack([quat_ee, quat_goal]))
+        slerp = Slerp([0.0, 1.0], r_pair)
+        new_quat = slerp([frac]).as_quat()[0]
 
         new_pose = np.concatenate([new_crd, new_quat])
+
+        # if self.i % 100 == 0:
+        #     self.get_logger().info(f"start crd {crd_ee}, goal crd {crd_goal}, new crd {new_crd}")
+        #     self.get_logger().info(f"step dir {(crd_goal - crd_ee) / dist}, step {step} ")
+        #     self.get_logger().info(f"frac: {frac}, at 0 {slerp([0.0]).as_quat()[0]}, at 1 {slerp([1.0]).as_quat()[0]}")
+        #
+        #     self.get_logger().info(f"goal pose: {goal_pose_rel_base_frame}")
+        #     self.get_logger().info(f"new pose: {new_pose}")
+        #
+        #     t = TransformStamped()
+        #     t.header.stamp = self.get_clock().now().to_msg()
+        #     t.header.frame_id = self.reference_frame
+        #     t.child_frame_id = f"{self.robot_prefix}_test_frame"
+        #
+        #     t.transform.translation.x = new_pose[0]
+        #     t.transform.translation.y = new_pose[1]
+        #     t.transform.translation.z = new_pose[2]
+        #
+        #     t.transform.rotation.x = new_pose[3]
+        #     t.transform.rotation.y = new_pose[4]
+        #     t.transform.rotation.z = new_pose[5]
+        #     t.transform.rotation.w = new_pose[6]
+        #
+        #     self.tf_broadcaster.sendTransform(t)
+        #
+        # self.i += 1
+
         return new_pose
 
 

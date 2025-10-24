@@ -28,6 +28,7 @@ setup(
             'template = p5_controller.template:main',
             'relative_mover = p5_controller.relative_mover_node:main',
             'home = p5_controller.home:main',
+            'test_move = p5_controller.test_of_rm:main',
         ],
     },
 )
