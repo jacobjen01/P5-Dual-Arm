@@ -60,5 +60,11 @@ RUN apt-get update && apt-get install -y \
     ros-jazzy-apriltag-ros \
 	&& rm -rf /var/lib/apt/lists/*
 
+RUN apt-get update && apt-get install -y \
+    python3-scipy \
+    && rm -rf /var/lib/apt/lists/*
+
+
+# Source ROS 2 setup on container start
 SHELL ["/bin/bash", "-c"]
 
