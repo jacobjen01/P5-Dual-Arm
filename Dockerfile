@@ -55,16 +55,10 @@ RUN apt-get update && apt-get install -y \
 	iputils-ping \
 	python3-colcon-common-extensions \
 	x11-apps \	
-#    librealsense2-utils librealsense2-dev librealsense2-dkms \
     ros-jazzy-realsense2-camera \
     ros-jazzy-image-tools \
     ros-jazzy-apriltag-ros \
 	&& rm -rf /var/lib/apt/lists/*
 
-CMD xeyes
-# Source ROS 2 setup on container start
 SHELL ["/bin/bash", "-c"]
-RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc 
 
-#CMD ["bash", "source /opt/ros/jazzy/setup.bash", "cd home/P5-Dual-Arm", "source install/setup.bash"]
-CMD ["bash"]
