@@ -6,29 +6,34 @@ from tf2_msgs.msg import TFMessage
 from collections import deque
 import math
 from p5_interfaces.msg import Tagvector
+from geometry_msgs.msg import TransformStamped
+from tf2_ros import TransformBroadcaster, Buffer
 
 class FutureTagEstimator(Node):
     def __init__(self):
         super().__init__('future_tag_estimator')
 
+        self.tf_buffer = Buffer()
+        self.tf_broadcaster = TransformBroadcaster(self)
+
         # Laver parametere (kan overskrives via ros2 param eller launch)
-        self.declare_parameter('input_topic', '/tf')                                                # Navn på topic vi subber fra
-        self.declare_parameter('output_topic', '/future_tag_poses')                                 # Navn på topic vi publicerer til
+        self.declare_parameter('input_topic', '/tf')                                                                    # Navn på topic vi subber fra
+        self.declare_parameter('output_topic', '/future_tag_vector')                                                    # Navn på topic vi publicerer til
         self.declare_parameter('qos_depth', 10)
-        self.declare_parameter('history_size', 5)                                                   # Antal positioner vi gemmer i historikken pr tag til udregning af bevægelse
+        self.declare_parameter('history_size', 5)                                                                       # Antal positioner vi gemmer i historikken pr tag til udregning af bevægelse
 
         # Henter parameterværdier
-        input_topic = self.get_parameter('input_topic').get_parameter_value().string_value          # Henter input topic navn fra parameter
-        output_topic = self.get_parameter('output_topic').get_parameter_value().string_value        # Henter output topic navn fra parameter
-        qos_depth = self.get_parameter('qos_depth').get_parameter_value().integer_value             # Henter qos depth fra parameter
-        self.history_size = self.get_parameter('history_size').get_parameter_value().integer_value  # Henter history size fra parameter
+        input_topic = self.get_parameter('input_topic').get_parameter_value().string_value                              # Henter input topic navn fra parameter
+        output_topic = self.get_parameter('output_topic').get_parameter_value().string_value                            # Henter output topic navn fra parameter
+        qos_depth = self.get_parameter('qos_depth').get_parameter_value().integer_value                                 # Henter qos depth fra parameter
+        self.history_size = self.get_parameter('history_size').get_parameter_value().integer_value                      # Henter history size fra parameter
 
         # Opretter QoS profil
         qos = QoSProfile(depth=qos_depth)
 
         # Opretter publisher til output topic. Sætter beskedtypen til vores custom type Tagvector
-        self.publisher = self.create_publisher(Tagvector, output_topic, qos)
-        
+        self.tagvector_publisher = self.create_publisher(Tagvector, output_topic, qos)
+
         # Opretter subscription til input topic. Her er det /tf fra apriltag detektering
         self.subscription = self.create_subscription(
             TFMessage,
@@ -37,11 +42,28 @@ class FutureTagEstimator(Node):
             qos
         )
 
-        #self.tag_poses = {}     # Old
+        self.tag_poses = {}      # Liste til at gemme nuværende poses { tag_key: {'translation': (x,y,z), 'rotation': (qx,qy,qz,qw)} }
         self.tag_history = {}    # Liste til at gemme historik { tag_key: deque([ (t, (x,y,z)), ... ], maxlen=history_size) }
         self.tag_motion = {}     # Liste til at gemme bevægelse { tag_key: {'direction': (dx,dy,dz), 'speed': s} }
 
         #self.get_logger().info(f'Subscribed to: {input_topic} -> Publishing to: {output_topic}')
+
+    def create_tf_tree(self, parent_name, child_name, pose):
+        t = TransformStamped()
+        t.header.stamp = self.get_clock().now().to_msg()
+        t.header.frame_id = parent_name
+        t.child_frame_id = child_name
+
+        t.transform.translation.x = pose[0]
+        t.transform.translation.y = pose[1]
+        t.transform.translation.z = pose[2]
+
+        t.transform.rotation.x = pose[3]
+        t.transform.rotation.y = pose[4]
+        t.transform.rotation.z = pose[5]
+        t.transform.rotation.w = pose[6]
+
+        self.tf_broadcaster.sendTransform(t)
 
     def time_to_sec(self, stamp):
         # Timestampen kommer fra builtin_interfaces.msg.Time som har to fields: sec og nanosec
@@ -81,6 +103,8 @@ class FutureTagEstimator(Node):
             return
 
         for transform in msg.transforms:                                    # Går igennem alle transformer dvs alle tags i beskeden
+            if transform.header.frame_id != "camera_color_optical_frame":   # Vi er kun interesseret i tags der er i world frame
+                continue
             child = transform.child_frame_id                                # Henter child frame id (tag navn)
             if ':' in child:                                                # Tjekker om der er et kolon i navnet
                 tag_key = child.split(':')[-1]                              # Snupper delen efter kolonet som tag_key da apriltag bruger formatet tag36h11:X
@@ -117,13 +141,16 @@ class FutureTagEstimator(Node):
             # Logger bevægelsesinfo
             self.get_logger().info(f"Tag {tag_key} motion -> dir: ({direction[0]:.3f}, {direction[1]:.3f}, {direction[2]:.3f}), speed: {speed:.3f} m/s")
 
+            self.create_tf_tree(child, "Grabpoint_1", (0.22, 0.0, -0.0815, 0.0, 0.0, 0.0, 1.0))
+            self.create_tf_tree(child, "Grabpoint_2", (-0.22, 0.0, -0.0815, 0.0, 0.0, 0.0, 1.0))
+
             # Publicerer
             msg_out = Tagvector()
             msg_out.tag_id = int(tag_key)
             msg_out.vx, msg_out.vy, msg_out.vz = direction
             msg_out.vx_unit, msg_out.vy_unit, msg_out.vz_unit = direction_unit
             msg_out.speed = speed
-            self.publisher.publish(msg_out)
+            self.tagvector_publisher.publish(msg_out)
 
         #for tag_key in self.tag_motion:
         #    msg = Tagvector()

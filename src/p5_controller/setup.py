@@ -10,6 +10,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/p5_controller/launch', ['launch/robot_commands_listener.launch.py'])
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -24,6 +25,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'move_mir = p5_controller.move_mir:main',
             'template = p5_controller.template:main',
             'relative_mover = p5_controller.relative_mover_node:main',
             'home = p5_controller.home:main',

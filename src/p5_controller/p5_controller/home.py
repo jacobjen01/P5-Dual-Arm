@@ -10,6 +10,7 @@ from action_msgs.msg import GoalStatus
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from control_msgs.action import FollowJointTrajectory
 from control_msgs.msg import JointTolerance
+import std_msgs.msg
 
 from rclpy.node import Node
 from controller_manager_msgs.srv import SwitchController
@@ -220,14 +221,34 @@ def move_robot_to_home(robot_name):
         rclpy.logging.get_logger(robot_name).info("Done")
 
 
+class RobotCommandListener(Node):
+    def __init__(self):
+        super().__init__("robot_command_listener")
+        self.robotCommandsSubscriber = self.create_subscription(std_msgs.msg.String,"/robot_commands", self.robot_command_callback, 10)
+
+    def robot_command_callback(self, msg):
+        if msg.data == "HOME":
+            switch_to_joint_control()
+            move_robot_to_home("alice")
+            move_robot_to_home("bob")
+            switch_to_position_control()
+        
+        if msg.data == "ALICE_HOME":
+            switch_to_joint_control()
+            move_robot_to_home("alice")
+            switch_to_position_control()
+
+        if msg.data == "BOB_HOME":
+            switch_to_joint_control()
+            move_robot_to_home("bob")
+            switch_to_position_control()
+
+
 def main(args=None):
     rclpy.init(args=args)
-    
-    switch_to_joint_control()
-    move_robot_to_home("alice")
-    move_robot_to_home("bob")
-    switch_to_position_control()
-
+    node = RobotCommandListener()
+    rclpy.spin(node)
+    node.destroy_node()
     rclpy.shutdown()
 
 
