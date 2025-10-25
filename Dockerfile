@@ -67,4 +67,5 @@ RUN apt-get update && apt-get install -y \
 
 # Source ROS 2 setup on container start
 SHELL ["/bin/bash", "-c"]
-
+ENV ROS_DOMAIN_ID=69
+#ENTRYPOINT ["export", "ROS_DOMAIN_ID=69"]
