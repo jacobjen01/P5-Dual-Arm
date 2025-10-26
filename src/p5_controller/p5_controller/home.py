@@ -10,10 +10,10 @@ from action_msgs.msg import GoalStatus
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from control_msgs.action import FollowJointTrajectory
 from control_msgs.msg import JointTolerance
-import std_msgs.msg
 
 from rclpy.node import Node
 from controller_manager_msgs.srv import SwitchController
+from p5_interfaces.srv import RobotConfigurations 
 
 class ControllerManager(Node):
     def __init__(self):
@@ -224,24 +224,32 @@ def move_robot_to_home(robot_name):
 class RobotCommandListener(Node):
     def __init__(self):
         super().__init__("robot_command_listener")
-        self.robotCommandsSubscriber = self.create_subscription(std_msgs.msg.String,"/robot_commands", self.robot_command_callback, 10)
+        self.home_service = self.create_service(RobotConfigurations, "/robot_configurations", self.handle_robot_configuration_service)
 
-    def robot_command_callback(self, msg):
-        if msg.data == "HOME":
+    def handle_robot_configuration_service(self, request, response):
+        if request.command == "HOME":
             switch_to_joint_control()
             move_robot_to_home("alice")
             move_robot_to_home("bob")
             switch_to_position_control()
-        
-        if msg.data == "ALICE_HOME":
+            response.success = True
+            response.message = "Both robots homed successfully"
+        elif request.command == "ALICE_HOME":
             switch_to_joint_control()
             move_robot_to_home("alice")
             switch_to_position_control()
-
-        if msg.data == "BOB_HOME":
+            response.success = True
+            response.message = "Alice homed successfully"
+        elif request.command == "BOB_HOME":
             switch_to_joint_control()
             move_robot_to_home("bob")
             switch_to_position_control()
+            response.success = True
+            response.message = "Bob homed successfully"
+        else:
+            response.success = False
+            response.message = "Unknown command"
+        return response
 
 
 def main(args=None):
