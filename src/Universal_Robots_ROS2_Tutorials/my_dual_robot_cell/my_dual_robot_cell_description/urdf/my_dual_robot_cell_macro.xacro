@@ -25,18 +25,32 @@
       <child link="mir" />
     </joint>
 
+	<!--<link name="mir">-->
+	<!--<visual>-->
+	<!--<geometry>-->
+	<!--<mesh filename="package://my_robot_cell_description/meshes/Dual_Robot_Base.dae"/>-->
+	<!--</geometry>-->
+	<!--<origin rpy="1.570796 0 0" xyz="0 0 -0.70"/>-->
+	<!--</visual>-->
+	<!--<collision>-->
+	<!--<geometry>-->
+	<!--<mesh filename="package://my_robot_cell_description/meshes/Dual_Robot_Base.dae"/>-->
+	<!--</geometry>-->
+	<!--<origin rpy="1.570796 0 0" xyz="0 0 -0.70"/>-->
+	<!--</collision>-->
+	<!--</link>-->
     <link name="mir">
       <visual>
         <geometry>
-          <mesh filename="package://my_robot_cell_description/meshes/Dual_Robot_Base.dae"/>
+          <mesh filename="package://my_robot_cell_description/meshes/Low_Res_Dual_Robot_Base.dae"/>
         </geometry>
-        <origin rpy="1.570796 0 0" xyz="0 0 -0.70"/>
+        <origin rpy="1.570796 0 1.570796" xyz="0.25 -0.4 -1.0"/>
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://my_robot_cell_description/meshes/Dual_Robot_Base.dae"/>
+          <mesh filename="package://my_robot_cell_description/meshes/Low_Res_Dual_Robot_Base.dae"/>
         </geometry>
-        <origin rpy="1.570796 0 0" xyz="0 0 -0.70"/>
+		<origin rpy="1.570796 0 1.570796" xyz="0.25 -0.4 -1.0"/>
       </collision>
     </link>
    
