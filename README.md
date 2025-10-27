@@ -76,5 +76,5 @@ alice_use_mock_hardware:=true bob_use_mock_hardware:=true
 ## Home
 To home the robot use this
 ```
-ros2 fuck_jons_mother
+ros2 service call /robot_configurations p5_interfaces/srv/RobotConfigurations "{command: 'HOME'}"
 ```
