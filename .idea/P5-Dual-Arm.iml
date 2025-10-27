@@ -6,65 +6,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="workspace" level="project" />
     <orderEntry type="library" name="ROS" level="project" />
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-    <orderEntry type="library" name="workspace" level="project" />
-    <orderEntry type="library" name="ROS" level="project" />
-=======
->>>>>>> Stashed changes
-    <orderEntry type="library" name="workspace" level="project" />
-    <orderEntry type="library" name="ROS" level="project" />
-=======
->>>>>>> Stashed changes
-    <orderEntry type="library" name="workspace" level="project" />
-    <orderEntry type="library" name="ROS" level="project" />
-    <orderEntry type="library" name="workspace" level="project" />
-    <orderEntry type="library" name="ROS" level="project" />
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
-    <orderEntry type="library" name="workspace" level="project" />
-    <orderEntry type="library" name="ROS" level="project" />
->>>>>>> Stashed changes
-=======
-=======
-    <orderEntry type="library" name="workspace" level="project" />
-    <orderEntry type="library" name="ROS" level="project" />
->>>>>>> Stashed changes
-=======
-    <orderEntry type="library" name="workspace" level="project" />
-    <orderEntry type="library" name="ROS" level="project" />
->>>>>>> Stashed changes
-=======
-    <orderEntry type="library" name="workspace" level="project" />
-    <orderEntry type="library" name="ROS" level="project" />
->>>>>>> Stashed changes
-    <orderEntry type="library" name="workspace" level="project" />
-    <orderEntry type="library" name="ROS" level="project" />
-    <orderEntry type="library" name="workspace" level="project" />
-    <orderEntry type="library" name="ROS" level="project" />
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
-    <orderEntry type="library" name="workspace" level="project" />
-    <orderEntry type="library" name="ROS" level="project" />
->>>>>>> Stashed changes
-=======
-    <orderEntry type="library" name="workspace" level="project" />
-    <orderEntry type="library" name="ROS" level="project" />
->>>>>>> Stashed changes
-=======
-    <orderEntry type="library" name="workspace" level="project" />
-    <orderEntry type="library" name="ROS" level="project" />
->>>>>>> Stashed changes
   </component>
   <component name="PyDocumentationSettings">
     <option name="format" value="PLAIN" />
