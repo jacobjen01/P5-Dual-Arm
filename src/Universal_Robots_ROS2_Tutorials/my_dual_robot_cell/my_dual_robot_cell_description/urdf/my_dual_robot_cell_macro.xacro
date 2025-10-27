@@ -25,24 +25,59 @@
       <child link="mir" />
     </joint>
 
+	<!--<link name="mir">-->
+	<!--<visual>-->
+	<!--<geometry>-->
+	<!--<mesh filename="package://my_robot_cell_description/meshes/Dual_Robot_Base.dae"/>-->
+	<!--</geometry>-->
+	<!--<origin rpy="1.570796 0 0" xyz="0 0 -0.70"/>-->
+	<!--</visual>-->
+	<!--<collision>-->
+	<!--<geometry>-->
+	<!--<mesh filename="package://my_robot_cell_description/meshes/Dual_Robot_Base.dae"/>-->
+	<!--</geometry>-->
+	<!--<origin rpy="1.570796 0 0" xyz="0 0 -0.70"/>-->
+	<!--</collision>-->
+	<!--</link>-->
     <link name="mir">
       <visual>
         <geometry>
-          <mesh filename="package://my_robot_cell_description/meshes/Dual_Robot_Base.dae"/>
+          <mesh filename="package://my_robot_cell_description/meshes/Low_Res_Dual_Robot_Base.dae"/>
         </geometry>
-        <origin rpy="1.570796 0 0" xyz="0 0 -0.70"/>
+        <origin rpy="1.570796 0 1.570796" xyz="0.25 -0.4 -1.0"/>
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://my_robot_cell_description/meshes/Dual_Robot_Base.dae"/>
+          <mesh filename="package://my_robot_cell_description/meshes/Low_Res_Dual_Robot_Base.dae"/>
         </geometry>
-        <origin rpy="1.570796 0 0" xyz="0 0 -0.70"/>
+		<origin rpy="1.570796 0 1.570796" xyz="0.25 -0.4 -1.0"/>
       </collision>
     </link>
    
     <material name="white">
       <color rgba="1 1 1 1"/>
     </material>
+	
+    <joint name="table" type="fixed">
+      <xacro:insert_block name="origin" />
+      <parent link="world" />
+      <child link="table" />
+    </joint>
+
+    <link name="table">
+      <visual>
+        <geometry>
+          <mesh filename="package://my_robot_cell_description/meshes/fzi_table.dae"/>
+        </geometry>
+        <origin rpy="0 0 0" xyz="0.75 0.5 -1"/>
+      </visual>
+      <collision>
+        <geometry>
+          <mesh filename="package://my_robot_cell_description/meshes/fzi_table.dae"/>
+        </geometry>
+        <origin rpy="0 0 0" xyz="0.75 0.5 -1"/>
+      </collision>
+    </link>
 
     <!--Creates the mounts to attach the robots to the table-->
     <link name="alice_robot_mount"/>

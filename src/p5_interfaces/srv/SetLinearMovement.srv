@@ -1,4 +1,4 @@
 bool linear
-bool time
+bool use_tracking_velocity
 ---
 bool resp

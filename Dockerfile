@@ -55,16 +55,18 @@ RUN apt-get update && apt-get install -y \
 	iputils-ping \
 	python3-colcon-common-extensions \
 	x11-apps \	
-#    librealsense2-utils librealsense2-dev librealsense2-dkms \
     ros-jazzy-realsense2-camera \
     ros-jazzy-image-tools \
     ros-jazzy-apriltag-ros \
 	&& rm -rf /var/lib/apt/lists/*
 
-CMD xeyes
+RUN apt-get update && apt-get install -y \
+    python3-scipy \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN   sed -i "s|size: 0.173|size: 0.69|g" /opt/ros/jazzy/share/apriltag_ros/cfg/tags_36h11.yaml
+
 # Source ROS 2 setup on container start
 SHELL ["/bin/bash", "-c"]
-RUN echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc 
-
-#CMD ["bash", "source /opt/ros/jazzy/setup.bash", "cd home/P5-Dual-Arm", "source install/setup.bash"]
-CMD ["bash"]
+ENV ROS_DOMAIN_ID=69
+#ENTRYPOINT ["export", "ROS_DOMAIN_ID=69"]
