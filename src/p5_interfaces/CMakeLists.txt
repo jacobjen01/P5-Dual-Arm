@@ -16,6 +16,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/MoveToPose.srv"
   "srv/SetLinearMovement.srv"
   "srv/SetReferenceFrame.srv"
+  "srv/RobotConfigurations.srv"
 
   DEPENDENCIES geometry_msgs
   DEPENDENCIES std_msgs
