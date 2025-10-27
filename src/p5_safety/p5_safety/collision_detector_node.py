@@ -4,16 +4,16 @@ import numpy as np
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 from tf2_ros import TransformBroadcaster, Buffer, TransformListener
+from p5_safety._error_handling import ErrorHandler
+
 from geometry_msgs.msg import TransformStamped
 from std_msgs.msg import Bool
 
-from p5_safety._error_handling import ErrorHandler
 
 
 class CollisionDetector(Node):
     def __init__(self):
         super().__init__('collision_detector_node')
-
         self.WORLD_FRAME = "mir"
 
         self.ROBOT_A_CYL_FRAME_DATA = [("alice_upper_arm_link_shifted", "alice_forearm_link_shifted", 0.05), ("alice_forearm_link", "alice_wrist_1_link_shifted", 0.05),
@@ -93,7 +93,6 @@ class CollisionDetector(Node):
         except Exception as e:
             self.get_logger().error(f'Failed to get transform from {parent_name}/{child_name}: {e}')
             self.error_handler.report_error(self.error_handler.info, f'Failed to get transform from {parent_name}/{child_name}: {e}')
-
 
             return []
 

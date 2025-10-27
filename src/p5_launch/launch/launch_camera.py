@@ -26,4 +26,18 @@ def generate_launch_description():
                 ('camera_info', '/camera/camera/color/camera_info'),
             ]
         ),
+
+        # Static transform from mir -> camera_link
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='static_tf_mir_to_camera',
+            arguments=[
+                '0.1', '0.0', '0.2',  # x y z (meters)
+                '0', '0', '0',        # roll pitch yaw (radians)
+                'mir',          # parent frame
+                'camera_link'         # child frame
+            ]
+        ),
+
     ])

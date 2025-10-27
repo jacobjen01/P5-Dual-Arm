@@ -1,3 +1,6 @@
 geometry_msgs/Pose pose
+bool linear
+bool use_tracking_velocity
+string frame
 ---
 bool resp

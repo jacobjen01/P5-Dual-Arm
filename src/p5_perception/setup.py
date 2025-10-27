@@ -13,18 +13,17 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='ubuntu',
-    maintainer_email='ubuntu@todo.todo',
+    maintainer='jacob',
+    maintainer_email='jacobjen01@gmail.com',
     description='TODO: Package description',
-    license='Apache-2.0',
-    extras_require={
-        'test': [
-            'pytest',
-        ],
-    },
+    license='TODO: License declaration',
+    tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'template = p5_perception.template:main'
+            'future_tag_estimator = p5_perception.future_tag_estimator:main',
+            'future_tag_estimator_quick = p5_perception.future_tag_estimator_quick:main',
+            'future_tag_estimator_with_timing = p5_perception.future_tag_estimator_with_timing:main',
+            'future_tag_estimator_quick_with_timing = p5_perception.future_tag_estimator_quick_with_timing:main',
         ],
     },
 )
