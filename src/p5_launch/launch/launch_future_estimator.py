@@ -24,7 +24,10 @@ def generate_launch_description():
             remappings=[
                 ('image_rect', '/camera/camera/color/image_raw'),
                 ('camera_info', '/camera/camera/color/camera_info'),
-            ]
+            ],
+            parameters=[{
+                'size': 0.1
+            }]
         ),
         #
         # Future tag estimator
