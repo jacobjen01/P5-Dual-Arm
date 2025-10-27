@@ -171,7 +171,8 @@ class FutureTagEstimator(Node):
 
             # Publicerer
             msg_out = Tagvector()
-            msg_out.tag_id = int(tag_key)
+            msg_out.tag_id = child
+            msg_out.tag_id_only_nr = int(tag_key)  # Extract numeric part for tag_id_only_nr
             msg_out.vx, msg_out.vy, msg_out.vz = direction
             msg_out.vx_unit, msg_out.vy_unit, msg_out.vz_unit = direction_unit
             msg_out.speed = speed
