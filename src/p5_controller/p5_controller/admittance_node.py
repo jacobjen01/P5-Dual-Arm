@@ -66,9 +66,12 @@ class EEAdmittance(Node):
         tx = msg.wrench.torque.x
         ty = msg.wrench.torque.y
         tz = msg.wrench.torque.z
-        # Low-pass filter could be added here
         # Store as numpy vector for admittance law
-        self.wrench = np.array([fx, fy, fz, tx, ty, tz])
+        FT_vector = np.array([fx, fy, fz, tx, ty, tz])
+
+        # Low-pass filter could be added here
+        alpha = 0.2    # filter coefficient
+        self.wrench = alpha * FT_vector + (1 - alpha) * self.wrench
 
     def goal_cb(self, msg: PoseStamped):
         self.goal_frame = msg.header.frame_id
@@ -96,28 +99,10 @@ class EEAdmittance(Node):
 
     def get_TM_displacement(self):
         # Create transformation matrix for position displacements of EE based on e_xx.
-        Rot_x = np.array([
-            [1, 0, 0],
-            [0, np.cos(self.x_ee[3]), -np.sin(self.x_ee[3])],
-            [0, np.sin(self.x_ee[3]), np.cos(self.x_ee[3])]
-        ])
-
-        Rot_y = np.array([
-            [np.cos(self.x_ee[4]), 0, np.sin(self.x_ee[4])],
-            [0, 1, 0],
-            [-np.sin(self.x_ee[4]), 0, np.cos(self.x_ee[4])]
-        ])
-
-        Rot_z = np.array([
-            [np.cos(self.x_ee[5]), -np.sin(self.x_ee[5]), 0],
-            [np.sin(self.x_ee[5]), np.cos(self.x_ee[5]), 0],
-            [0, 0, 1]
-        ])
-
-        Rot_ee = Rot_z @ Rot_y @ Rot_x
-        Trans_ee = np.array([[self.x_ee[0]], [self.x_ee[1]], [self.x_ee[2]]])
-        T_delta = np.vstack((np.hstack((Rot_ee, Trans_ee)), [0, 0, 0, 1]))
-
+        r = R.from_euler('zxy', self.x_ee[3:6])
+        r.as_matrix()
+        T_delta = np.vstack((np.hstack((r.as_matrix(), [[self.x_ee[0]],
+                                                        [self.x_ee[1]], [self.x_ee[2]]])), [0, 0, 0, 1]))
         return T_delta
 
     def get_TM_goal(self):
