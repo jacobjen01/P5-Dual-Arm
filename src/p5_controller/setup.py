@@ -25,6 +25,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'change_pre_config_poses = p5_controller.change_pre_config_poses:main',
+            'move_to_pre_config_poses = p5_controller.move_to_pre_config_poses:main',
             'template = p5_controller.template:main',
             'relative_mover = p5_controller.relative_mover_node:main',
             'home = p5_controller.home:main',
