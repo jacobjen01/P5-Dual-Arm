@@ -29,8 +29,8 @@ class EEAdmittance(Node):
         # Parameters (tunable virtual dynamics)
         self.declare_parameter('M', [1.5, 1.5, 1.5, 0.1, 0.1, 0.1])   # virtual mass
         self.declare_parameter('D', [20.0, 20.0, 20.0, 3.0, 3.0, 3.0])   # damping
-        self.declare_parameter('K', [8.0, 8.0, 8.0, 1.2, 1.2, 1.2])      # stiffness
-        self.declare_parameter('rate_hz', 100.0)                # control loop rate
+        self.declare_parameter('K', [50.0, 50.0, 50.0, 1.2, 1.2, 1.2])      # stiffness
+        self.declare_parameter('rate_hz', 250.0)                # control loop rate
 
         # Load parameters
         self.M = np.diag(self.get_parameter('M').value)
@@ -69,9 +69,10 @@ class EEAdmittance(Node):
         # Store as numpy vector for admittance law
         FT_vector = np.array([fx, fy, fz, tx, ty, tz])
         # self.get_logger().info(f"Force {fx, fy, fz}, Torque: {tx, ty, tz}")
+        #self.wrench = FT_vector
 
         # Low-pass filter could be added here
-        alpha = 0.5    # filter coefficient
+        alpha = 0.01    # filter coefficient
         self.wrench = alpha * FT_vector + (1 - alpha) * self.wrench
         # self.get_logger().info(f"Force {self.wrench}")
 
@@ -134,8 +135,8 @@ class EEAdmittance(Node):
 
     def control_loop(self):
         # Only run admittance if we have a goal
-        # if not self.goal_received:
-        #  return
+        if not self.goal_received:
+          return
         self.update_admittance()
         # Get current pose in quaternions.
         current_pose = self.convert_TM_to_pose()
