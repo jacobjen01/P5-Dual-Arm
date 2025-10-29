@@ -1,6 +1,11 @@
 # P5-Dual-Arm
 Semester project P5 gruppe 141 AAU Dual Arm Beer Buddy
 
+##Connection to the system
+Connect to the router TPLINK -2.4 GHz(password is 29171798), add manual addresses to the settings:
+address 192.168.56.<choose your number>, netmask 255.255.255.0, gateway 192.168.0.1
+create ssh connection for the jetson with our study group number.
+
 ## Prerequisites
 This system is designed for Linux only and requires Docker with Compose v2.
 

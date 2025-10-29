@@ -53,7 +53,7 @@ class EEAdmittance(Node):
                                                    self.goal_cb, 10)
 
         self.current_goal_pub = self.create_publisher(
-            PoseStamped, f'/robot_pose_before_safety_{self.robot_name}', 10)
+            PoseStamped, f'{self.robot_name}/servo_node/pose_target_cmds', 10)
 
         # Timer for control loop
         self.timer = self.create_timer(self.dt, self.control_loop)
