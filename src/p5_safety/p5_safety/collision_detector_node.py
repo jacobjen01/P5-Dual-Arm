@@ -14,7 +14,6 @@ from std_msgs.msg import Bool
 class CollisionDetector(Node):
     def __init__(self):
         super().__init__('collision_detector_node')
-
         self.WORLD_FRAME = "mir"
 
         self.ROBOT_A_CYL_FRAME_DATA = [("alice_upper_arm_link_shifted", "alice_forearm_link_shifted", 0.05), ("alice_forearm_link", "alice_wrist_1_link_shifted", 0.05),

@@ -1,4 +1,5 @@
-int64 tag_id
+string tag_id
+int64 tag_id_only_nr
 float64 vx
 float64 vy
 float64 vz

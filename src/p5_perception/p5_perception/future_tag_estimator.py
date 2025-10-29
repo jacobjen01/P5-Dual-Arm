@@ -1,14 +1,16 @@
 import re
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile
 from tf2_msgs.msg import TFMessage
 from collections import deque
 import math
 from p5_interfaces.msg import Tagvector
 from geometry_msgs.msg import TransformStamped
-from tf2_ros import TransformBroadcaster, Buffer
+from tf2_ros import TransformBroadcaster, Buffer, TransformListener
 import numpy as np
+from p5_safety._error_handling import ErrorHandler
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
+from std_msgs.msg import Bool
 
 class FutureTagEstimator(Node):
     def __init__(self):
@@ -16,6 +18,8 @@ class FutureTagEstimator(Node):
 
         self.tf_buffer = Buffer()
         self.tf_broadcaster = TransformBroadcaster(self)
+        self.error_handler = ErrorHandler(self)
+        self.tf_listener = TransformListener(self.tf_buffer, self)
 
         # Laver parametere (kan overskrives via ros2 param eller launch)
         self.declare_parameter('input_topic', '/tf')                                                                    # Navn på topic vi subber fra
@@ -167,7 +171,8 @@ class FutureTagEstimator(Node):
 
             # Publicerer
             msg_out = Tagvector()
-            msg_out.tag_id = int(tag_key)
+            msg_out.tag_id = child
+            msg_out.tag_id_only_nr = int(tag_key)  # Extract numeric part for tag_id_only_nr
             msg_out.vx, msg_out.vy, msg_out.vz = direction
             msg_out.vx_unit, msg_out.vy_unit, msg_out.vz_unit = direction_unit
             msg_out.speed = speed

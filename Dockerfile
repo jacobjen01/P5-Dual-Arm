@@ -64,6 +64,7 @@ RUN apt-get update && apt-get install -y \
     python3-scipy \
     && rm -rf /var/lib/apt/lists/*
 
+RUN   sed -i "s|size: 0.173|size: 0.69|g" /opt/ros/jazzy/share/apriltag_ros/cfg/tags_36h11.yaml
 
 # Source ROS 2 setup on container start
 SHELL ["/bin/bash", "-c"]

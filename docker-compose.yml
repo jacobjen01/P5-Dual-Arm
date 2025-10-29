@@ -11,7 +11,7 @@ services:
       - /dev/dri/:/dev/dri
       - /tmp/.X11-unix:/tmp/.X11-unix
       - ../P5-Dual-Arm:/home/P5-Dual-Arm
-    user: "1000:1000"
+#    user: "1000:1000"
     stdin_open: true  # equivalent to -it
     tty: true         # equivalent to -it
 

@@ -23,8 +23,9 @@ class TestNodeForBase(Node):
         self.req = MoveToPose.Request()
 
     def send_request(self):
-        pose = [0.3, -0.5, 0.4, 1.0, 0.0, 0.0, 0.0]
+        # pose = [0.3, -0.5, 0.4, 1.0, 0.0, 0.0, 0.0]
         # pose = [0.3, 0.5, 0.4, 1.0, 0.0, 0.0, 0.0]
+        pose = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
         self.req.pose.position.x = pose[0]
         self.req.pose.position.y = pose[1]
         self.req.pose.position.z = pose[2]
@@ -33,9 +34,9 @@ class TestNodeForBase(Node):
         self.req.pose.orientation.z = pose[5]
         self.req.pose.orientation.w = pose[6]
 
-        self.req.linear = False
-        self.reg.use_tracking_velocity = False
-        self.reg.frame = "alice_base_link"
+        self.req.linear = True
+        self.req.use_tracking_velocity = True
+        self.req.frame = "tag36h11:1"
 
         future = self.cli.call_async(self.req)
         rclpy.spin_until_future_complete(self, future)
