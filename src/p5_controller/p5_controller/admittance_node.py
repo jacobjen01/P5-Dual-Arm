@@ -27,9 +27,9 @@ class EEAdmittance(Node):
         self.robot_name = self.get_parameter('robot_name').value
 
         # Parameters (tunable virtual dynamics)
-        self.declare_parameter('M', [5.0, 5.0, 5.0, 0.5, 0.5, 0.5])   # virtual mass
-        self.declare_parameter('D', [100.0, 100.0, 100.0, 5.0, 5.0, 5.0])   # damping
-        self.declare_parameter('K', [50.0, 50.0, 50.0, 2.0, 2.0, 2.0])      # stiffness
+        self.declare_parameter('M', [1.5, 1.5, 1.5, 0.1, 0.1, 0.1])   # virtual mass
+        self.declare_parameter('D', [20.0, 20.0, 20.0, 3.0, 3.0, 3.0])   # damping
+        self.declare_parameter('K', [8.0, 8.0, 8.0, 1.2, 1.2, 1.2])      # stiffness
         self.declare_parameter('rate_hz', 100.0)                # control loop rate
 
         # Load parameters
@@ -68,10 +68,12 @@ class EEAdmittance(Node):
         tz = msg.wrench.torque.z
         # Store as numpy vector for admittance law
         FT_vector = np.array([fx, fy, fz, tx, ty, tz])
+        # self.get_logger().info(f"Force {fx, fy, fz}, Torque: {tx, ty, tz}")
 
         # Low-pass filter could be added here
-        alpha = 0.2    # filter coefficient
+        alpha = 0.5    # filter coefficient
         self.wrench = alpha * FT_vector + (1 - alpha) * self.wrench
+        # self.get_logger().info(f"Force {self.wrench}")
 
     def goal_cb(self, msg: PoseStamped):
         self.goal_frame = msg.header.frame_id
@@ -84,6 +86,7 @@ class EEAdmittance(Node):
         self.x_goal[5] = msg.pose.orientation.z
         self.x_goal[6] = msg.pose.orientation.w
         self.goal_received = True
+        # self.get_logger().info(f"Goal position {self.x_goal}")
 
     def update_admittance(self):
         # Admittance control law: M * dv/dt + D * v + K * x = F
@@ -131,8 +134,8 @@ class EEAdmittance(Node):
 
     def control_loop(self):
         # Only run admittance if we have a goal
-        if not self.goal_received:
-            return
+        # if not self.goal_received:
+        #  return
         self.update_admittance()
         # Get current pose in quaternions.
         current_pose = self.convert_TM_to_pose()
@@ -140,7 +143,7 @@ class EEAdmittance(Node):
         # Publish current pose to the 'robot_pose_before_safety' topic.
         pose_msg = PoseStamped()
         pose_msg.header.stamp = self.get_clock().now().to_msg()
-        pose_msg.header.frame_id = self.goal_frame
+        pose_msg.header.frame_id = 'world'
 
         pose_msg.pose.position.x = float(current_pose[0])
         pose_msg.pose.position.y = float(current_pose[1])
@@ -151,6 +154,7 @@ class EEAdmittance(Node):
         pose_msg.pose.orientation.w = float(current_pose[6])
 
         self.current_goal_pub.publish(pose_msg)
+        self.get_logger().info(f'Current position: {pose_msg}')
 
 
 def main(args=None):

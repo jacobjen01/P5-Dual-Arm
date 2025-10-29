@@ -29,6 +29,7 @@ setup(
             'relative_mover = p5_controller.relative_mover_node:main',
             'home = p5_controller.home:main',
             'test_move = p5_controller.test_of_rm:main',
+            'admittance_node = p5_controller.admittance_node:main'
         ],
     },
 )
