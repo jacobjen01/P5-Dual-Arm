@@ -1,6 +1,6 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
-
+import math
 
 def generate_launch_description():
     return LaunchDescription([
@@ -46,7 +46,7 @@ def generate_launch_description():
             name='static_tf_mir_to_camera',
             arguments=[
                 '0.0', '0.0', '0.0',  # x y z (meters)
-                '0', '0', '0',        # roll pitch yaw (radians)
+                str(math.pi), '0', '0',        # roll pitch yaw (radians)
                 'mir',          # parent frame
                 'camera_link'         # child frame
             ]
