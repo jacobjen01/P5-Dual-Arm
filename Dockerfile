@@ -69,4 +69,7 @@ RUN   sed -i "s|size: 0.173|size: 0.69|g" /opt/ros/jazzy/share/apriltag_ros/cfg/
 # Source ROS 2 setup on container start
 SHELL ["/bin/bash", "-c"]
 ENV ROS_DOMAIN_ID=69
+#CMD ["bash", "-c", "source", "opt/ros/jazzy/setup.bash"] 
+#CMD ["bash", "-c", "cd", "home/P5-Dual_Arm"]
+#CMD ["bash", "-c", "source", "install/setup.bash"]
 #ENTRYPOINT ["export", "ROS_DOMAIN_ID=69"]
