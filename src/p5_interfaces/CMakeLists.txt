@@ -13,6 +13,7 @@ find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Error.msg"
   "msg/Tagvector.msg"
+  "msg/TagvectorArray.msg"
   "srv/MoveToPose.srv"
   "srv/SetLinearMovement.srv"
   "srv/SetReferenceFrame.srv"

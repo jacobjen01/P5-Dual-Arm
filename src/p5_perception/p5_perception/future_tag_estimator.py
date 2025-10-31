@@ -4,7 +4,7 @@ from rclpy.node import Node
 from tf2_msgs.msg import TFMessage
 from collections import deque
 import math
-from p5_interfaces.msg import Tagvector
+from p5_interfaces.msg import TagvectorArray, Tagvector
 from geometry_msgs.msg import TransformStamped
 from tf2_ros import TransformBroadcaster, Buffer, TransformListener
 import numpy as np
@@ -37,7 +37,7 @@ class FutureTagEstimator(Node):
         qos = QoSProfile(depth=qos_depth)
 
         # Opretter publisher til output topic. Sætter beskedtypen til vores custom type Tagvector
-        self.tagvector_publisher = self.create_publisher(Tagvector, output_topic, qos)
+        self.tagvector_publisher = self.create_publisher(TagvectorArray, output_topic, qos)
 
         # Opretter subscription til input topic. Her er det /tf fra apriltag detektering
         self.subscription = self.create_subscription(
@@ -123,71 +123,52 @@ class FutureTagEstimator(Node):
             #self.tag_history.clear()
             return
 
-        for transform in msg.transforms:                                    # Går igennem alle transformer dvs alle tags i beskeden
-            if transform.header.frame_id != "camera_color_optical_frame":   # Vi er kun interesseret i tags der er i world frame
-                continue
-            child = transform.child_frame_id                                # Henter child frame id (tag navn)
-            if ':' in child:                                                # Tjekker om der er et kolon i navnet
-                tag_key = child.split(':')[-1]                              # Snupper delen efter kolonet som tag_key da apriltag bruger formatet tag36h11:X
-            else:
-                tag_key = child.replace('/', '_')                           # Håndterer andre frame navne
+        #Check at der er en transform der er et tag
+        has_tag_frame = any(transform.header.frame_id == "camera_color_optical_frame" for transform in msg.transforms)
+        if has_tag_frame:
+            msg_out_array = TagvectorArray()
 
-            crd = self.get_tf_tree_crd("alice_base_link", child)            # Opdaterer transform for tag i forhold til alice_base_link
-            if len(crd) == 0:
-                continue
-            tx, ty, tz = crd
-            # Tildeler variabler til positions komponenter
-            #tx = transform.transform.translation.x
-            #ty = transform.transform.translation.y
-            #tz = transform.transform.translation.z
-            #qx = transform.transform.rotation.x
-            #qy = transform.transform.rotation.y
-            #qz = transform.transform.rotation.z
-            #qw = transform.transform.rotation.w
-            #self.tag_poses[tag_key] = {
-            #    'translation': (tx, ty, tz),
-            #    'rotation': (qx, qy, qz, qw)
-            #}
+            for transform in msg.transforms:                                    # Går igennem alle transformer dvs alle tags i beskeden
+                if transform.header.frame_id != "camera_color_optical_frame":   # Vi er kun interesseret i tags der er i world frame
+                    continue
+                child = transform.child_frame_id                                # Henter child frame id (tag navn)
+                if ':' in child:                                                # Tjekker om der er et kolon i navnet
+                    tag_key = child.split(':')[-1]                              # Snupper delen efter kolonet som tag_key da apriltag bruger formatet tag36h11:X
+                else:
+                    tag_key = child.replace('/', '_')                           # Håndterer andre frame navne
 
-            # Får timestamp i sekunder
-            stamp = transform.header.stamp
-            t=self.time_to_sec(stamp)
+                crd = self.get_tf_tree_crd("alice_base_link", child)            # Opdaterer transform for tag i forhold til alice_base_link
+                if len(crd) == 0:
+                    continue
+                tx, ty, tz = crd
 
-            # Sikrer at der er en deque til historik for dette tag
-            if tag_key not in self.tag_history:
-                self.tag_history[tag_key] = deque(maxlen=self.history_size)
-            self.tag_history[tag_key].append((t, (tx, ty, tz)))
+                # Får timestamp i sekunder
+                stamp = transform.header.stamp
+                t=self.time_to_sec(stamp)
+
+                # Sikrer at der er en deque til historik for dette tag
+                if tag_key not in self.tag_history:
+                    self.tag_history[tag_key] = deque(maxlen=self.history_size)
+                self.tag_history[tag_key].append((t, (tx, ty, tz)))
 
 
-            # Udregn bevægelse ud fra historikken
-            direction_unit, direction, speed = self.compute_motion_from_history(self.tag_history[tag_key])
-            self.tag_motion[tag_key] = {'direction_unit': direction_unit, 'direction': direction, 'speed': speed}
+                # Udregn bevægelse ud fra historikken
+                direction_unit, direction, speed = self.compute_motion_from_history(self.tag_history[tag_key])
+                self.tag_motion[tag_key] = {'direction_unit': direction_unit, 'direction': direction, 'speed': speed}
 
-            # Logger bevægelsesinfo
-            self.get_logger().info(f"Tag {tag_key} motion -> dir: ({direction[0]:.3f}, {direction[1]:.3f}, {direction[2]:.3f}), speed: {speed:.3f} m/s")
+                # Logger bevægelsesinfo
+                self.get_logger().info(f"Tag {tag_key} motion -> dir: ({direction[0]:.3f}, {direction[1]:.3f}, {direction[2]:.3f}), speed: {speed:.3f} m/s")
 
-            # self.create_tf_tree(child, "Grabpoint_1", (0.22, 0.0, -0.0815, 0.0, 0.0, 0.0, 1.0))
-            # self.create_tf_tree(child, "Grabpoint_2", (-0.22, 0.0, -0.0815, 0.0, 0.0, 0.0, 1.0))
+                # Laver og tilføjer Tagvector besked til output array
+                vector = Tagvector(tag_id=child, tag_id_only_nr=int(tag_key), vx=direction[0], vy=direction[1], vz=direction[2],
+                                vx_unit=direction_unit[0], vy_unit=direction_unit[1], vz_unit=direction_unit[2], speed=speed)
+                msg_out_array.vectors.append(vector)
+            
+            # Publiserer TagvectorArray beskeden
+            self.get_logger().info(f"Publishing future tag vectors for {len(msg_out_array.vectors)} tags")
+            self.tagvector_publisher.publish(msg_out_array)
 
-            # Publicerer
-            msg_out = Tagvector()
-            msg_out.tag_id = child
-            msg_out.tag_id_only_nr = int(tag_key)  # Extract numeric part for tag_id_only_nr
-            msg_out.vx, msg_out.vy, msg_out.vz = direction
-            msg_out.vx_unit, msg_out.vy_unit, msg_out.vz_unit = direction_unit
-            msg_out.speed = speed
-            self.tagvector_publisher.publish(msg_out)
-
-        #for tag_key in self.tag_motion:
-        #    msg = Tagvector()
-        #    msg.tag_id = int(tag_key)
-        #    msg.vx = self.tag_motion[tag_key]['direction'][0]
-        #    msg.vy = self.tag_motion[tag_key]['direction'][1]
-        #    msg.vz = self.tag_motion[tag_key]['direction'][2]
-        #    msg.speed = self.tag_motion[tag_key]['speed']
-        #    self.publisher.publish(msg)
-
-        #self.get_logger().info(f"Current tag poses: {self.tag_poses}")
+            #self.get_logger().info(f"Current tag poses: {self.tag_poses}")
 
 def main(args=None):
     rclpy.init(args=args)
