@@ -139,9 +139,10 @@ class RelativeMover(Node):
     """
 
     def get_goal_velocity_callback(self, msg):
-        if msg.tag_id == self.reference_frame:
-            self.goal_pose_velocity = np.array([msg.vx_unit, msg.vy_unit, msg.vz_unit])
-            self.get_logger().info(f"Received velocity {[msg.vx_unit, msg.vy_unit, msg.vz_unit]}")
+        for vector in msg.vectors:
+            if vector.tag_id == self.reference_frame:
+                self.goal_pose_velocity = np.array([vector.vx_unit, vector.vy_unit, vector.vz_unit])
+                self.get_logger().info(f"Received velocity {[vector.vx_unit, vector.vy_unit, vector.vz_unit]}")
 
 
     """
