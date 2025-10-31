@@ -64,9 +64,15 @@ RUN apt-get update && apt-get install -y \
     python3-scipy \
     && rm -rf /var/lib/apt/lists/*
 
-RUN   sed -i "s|size: 0.173|size: 0.69|g" /opt/ros/jazzy/share/apriltag_ros/cfg/tags_36h11.yaml
+# RUN   sed -i "s|size: 0.173|size: 0.69|g" /opt/ros/jazzy/share/apriltag_ros/cfg/tags_36h11.yaml
 
-# Source ROS 2 setup on container start
+# Create workspace directory
+WORKDIR /home/P5-Dual-Arm/
+
+# Automatically source ROS and workspace setups in bashrc
+RUN echo "source /opt/ros/jazzy/setup.bash" >> /root/.bashrc && \
+    echo "source /home/P5-Dual-Arm/install/setup.bash" >> /root/.bashrc
+
 SHELL ["/bin/bash", "-c"]
 ENV ROS_DOMAIN_ID=69
 #CMD ["bash", "-c", "source", "opt/ros/jazzy/setup.bash"] 
