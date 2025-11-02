@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Admittance control node.
-- Defines virtual dynamics constants (mass, damping and stiffness).
+- Create service calls for mass, damping and stifness declaretion.
 - Subscribes to force/torque sensor data
 - Calculate end-effector displacement based on the dynamics.
 - Get goal pose from PoseStamped topic.
@@ -16,6 +16,9 @@ from rclpy.node import Node
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 from geometry_msgs.msg import WrenchStamped, PoseStamped
+from p5_interfaces.srv import AdmittanceConfig
+from p5_interfaces.srv import SaveAdmittanceParam
+import json
 
 
 class EEAdmittance(Node):
@@ -25,17 +28,17 @@ class EEAdmittance(Node):
         # Robot name parameter.
         self.declare_parameter('robot_name', 'alice')   # default to 'alice'
         self.robot_name = self.get_parameter('robot_name').value
-
-        # Parameters (tunable virtual dynamics)
-        self.declare_parameter('M', [1.5, 1.5, 1.5, 0.1, 0.1, 0.1])   # virtual mass
-        self.declare_parameter('D', [20.0, 20.0, 20.0, 3.0, 3.0, 3.0])   # damping
-        self.declare_parameter('K', [50.0, 50.0, 50.0, 1.2, 1.2, 1.2])      # stiffness
         self.declare_parameter('rate_hz', 250.0)                # control loop rate
+        self.srv = self.create_service(AdmittanceConfig, '/admittance_config', self.change_param)
+        self.srv = self.create_service(
+            SaveAdmittanceParam,
+            '/save_admittance_parameters',
+            self.save_param)
 
         # Load parameters
-        self.M = np.diag(self.get_parameter('M').value)
-        self.D = np.diag(self.get_parameter('D').value)
-        self.K = np.diag(self.get_parameter('K').value)
+        self.M = np.diag([1.5, 1.5, 1.5, 0.1, 0.1, 0.1])
+        self.D = np.diag([20.0, 20.0, 20.0, 3.0, 3.0, 3.0])
+        self.K = np.diag([50.0, 50.0, 50.0, 1.2, 1.2, 1.2])
         self.dt = 1.0 / float(self.get_parameter('rate_hz').value)
 
         # State variables
@@ -69,7 +72,7 @@ class EEAdmittance(Node):
         # Store as numpy vector for admittance law
         FT_vector = np.array([fx, fy, fz, tx, ty, tz])
         # self.get_logger().info(f"Force {fx, fy, fz}, Torque: {tx, ty, tz}")
-        #self.wrench = FT_vector
+        # self.wrench = FT_vector
 
         # Low-pass filter could be added here
         alpha = 0.01    # filter coefficient
@@ -88,6 +91,33 @@ class EEAdmittance(Node):
         self.x_goal[6] = msg.pose.orientation.w
         self.goal_received = True
         # self.get_logger().info(f"Goal position {self.x_goal}")
+
+    def change_param(self, request, response):
+        # Update admittance parameters from service request
+        self.M = np.diag(request.m)
+        self.D = np.diag(request.d)
+        self.K = np.diag(request.k)
+        response.message = "Admittance parameters updated."
+        return response
+
+    def save_param(self, request, response):
+        # Seve admittance parameters to a file
+        try:
+            with open("admittance_param.json", "r") as f:
+                data = f.read()
+            data = json.loads(data)
+        except BaseException:
+            data = {}
+        data[request.param_name] = {
+            "M": self.M,
+            "D": self.D,
+            "K": self.K
+        }
+        json_str = json.dumps(data, indent=4)
+        with open("admittance_param.json", "w") as f:
+            f.write(json_str)
+
+        response.message = f"Admittance parameters saved as {request.param_name}."
 
     def update_admittance(self):
         # Admittance control law: M * dv/dt + D * v + K * x = F
@@ -136,7 +166,7 @@ class EEAdmittance(Node):
     def control_loop(self):
         # Only run admittance if we have a goal
         if not self.goal_received:
-          return
+            return
         self.update_admittance()
         # Get current pose in quaternions.
         current_pose = self.convert_TM_to_pose()

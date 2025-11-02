@@ -13,7 +13,8 @@ from control_msgs.msg import JointTolerance
 
 from rclpy.node import Node
 from controller_manager_msgs.srv import SwitchController
-from p5_interfaces.srv import RobotConfigurations 
+from p5_interfaces.srv import RobotConfigurations
+
 
 class ControllerManager(Node):
     def __init__(self):
@@ -33,16 +34,21 @@ class ControllerManager(Node):
         rclpy.spin_until_future_complete(self, future)
 
         if future.result() is not None:
-            self.get_logger().info(f'Successfully switched controllers: {controllers_to_stop} -> {controllers_to_start}')
+            self.get_logger().info(
+                f'Successfully switched controllers: {controllers_to_stop} -> {controllers_to_start}')
         else:
             self.get_logger().error('Failed to call service: %r' % future.exception())
+
 
 class JTCClient(rclpy.node.Node):
     """Small test client for the jtc."""
 
     def __init__(self):
         super().__init__("jtc_client")
-        self.home_service = self.create_service(RobotConfigurations, "/robot_configurations", self.handle_robot_configuration_service)
+        self.home_service = self.create_service(
+            RobotConfigurations,
+            "/robot_configurations",
+            self.handle_robot_configuration_service)
 
     def handle_robot_configuration_service(self, request, response):
         self.handle_controller(request.robot_name)
@@ -53,14 +59,14 @@ class JTCClient(rclpy.node.Node):
         return response
 
     def handle_controller(self, robot_name):
-        controller_name = robot_name+"_scaled_joint_trajectory_controller/follow_joint_trajectory"
-        self.joints = [ 
-                    robot_name+"_shoulder_pan_joint",
-                    robot_name+"_shoulder_lift_joint",
-                    robot_name+"_elbow_joint",
-                    robot_name+"_wrist_1_joint",
-                    robot_name+"_wrist_2_joint",
-                    robot_name+"_wrist_3_joint"
+        controller_name = robot_name + "_scaled_joint_trajectory_controller/follow_joint_trajectory"
+        self.joints = [
+            robot_name + "_shoulder_pan_joint",
+            robot_name + "_shoulder_lift_joint",
+            robot_name + "_elbow_joint",
+            robot_name + "_wrist_1_joint",
+            robot_name + "_wrist_2_joint",
+            robot_name + "_wrist_3_joint"
         ]
         self._action_client = ActionClient(self, FollowJointTrajectory, controller_name)
         self.get_logger().info(f"Waiting for action server on {controller_name}")
@@ -72,7 +78,7 @@ class JTCClient(rclpy.node.Node):
         with open("pre_config_poses.json", "r") as f:
             TRAJECTORIES = f.read()
         TRAJECTORIES = json.loads(TRAJECTORIES)
-            
+
         self.goal_pose = JointTrajectory()
         self.goal_pose.joint_names = self.joints
         point = JointTrajectoryPoint()
@@ -147,6 +153,7 @@ class JTCClient(rclpy.node.Node):
         if error_code == GoalStatus.STATUS_ABORTED:
             return "ABORTED"
 
+
 def switch_to_joint_control():
     controller_manager = ControllerManager()
 
@@ -160,6 +167,7 @@ def switch_to_joint_control():
 
     controller_manager.destroy_node()
 
+
 def switch_to_position_control():
     controller_manager = ControllerManager()
 
@@ -172,6 +180,7 @@ def switch_to_position_control():
     controller_manager.switch_controller(controllers_to_stop, controllers_to_start)
 
     controller_manager.destroy_node()
+
 
 def main(args=None):
     rclpy.init(args=args)
