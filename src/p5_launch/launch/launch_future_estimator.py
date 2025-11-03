@@ -36,14 +36,14 @@ def generate_launch_description():
             package='p5_perception',
             namespace='perception',
             executable='future_tag_estimator',
-            name='future_tag_estimator'
+            name='future_tag_estimator_node'
         ),
 
         # Static transform from mir -> camera_link
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',
-            name='static_tf_mir_to_camera',
+            name='static_tf_mir_to_camera_node',
             arguments=[
                 '0.0', '0.0', '0.0',  # x y z (meters)
                 str(math.pi), '0', '0',        # roll pitch yaw (radians)
