@@ -174,10 +174,14 @@ class EEAdmittance(Node):
 
         M_inv = np.linalg.inv(self.M)
         a_ee = M_inv @ (self.wrench - self.D @ self.v_ee - self.K @ self.x_ee)
+        indices = np.where(a_ee[:3] > 1.5)[0]
+        a_ee[indices] = 1.5
 
         # Update velocity and position  (forward Euler integration)
         dt = 1 / self.update_rate
         self.v_ee += a_ee * dt
+        indices = np.where(self.v_ee[:3] > 0.6)[0]
+        self.v_ee[indices] = 0.6
         self.x_ee += self.v_ee * dt
 
     def get_TM_displacement(self):
