@@ -29,7 +29,13 @@ from p5_interfaces.srv import AdmittanceSetStatus
 class EEAdmittance(Node):
     def __init__(self):
         super().__init__('ee_admittance')
-        self.config = self.create_service(AdmittanceConfig, '/admittance_config', self.change_param)
+
+        self.robot_name = self.declare_parameter('robot_name', 'alice')
+        self.robot_name = self.get_parameter('robot_name').value
+
+        # Create service servers
+        self.config = self.create_service(AdmittanceConfig,
+                                          '/admittance_config', self.change_param)
         self.save = self.create_service(
             SaveAdmittanceParam,
             '/save_admittance_param',
@@ -107,7 +113,7 @@ class EEAdmittance(Node):
         return response
 
     def show_status(self, request, response):
-        req = request.show
+        request = request.show
         response.active = self.active
         response.robot_name = self.robot_name
         response.m_parameter = np.diag(self.M)
@@ -160,25 +166,6 @@ class EEAdmittance(Node):
         self.K = np.diag(request.k)
         response.message = "Admittance parameters updated."
         return response
-
-    def save_param(self, request, response):
-        # Seve admittance parameters to a file
-        try:
-            with open("admittance_param.json", "r") as f:
-                data = f.read()
-            data = json.loads(data)
-        except BaseException:
-            data = {}
-        data[request.param_name] = {
-            "M": self.M,
-            "D": self.D,
-            "K": self.K
-        }
-        json_str = json.dumps(data, indent=4)
-        with open("admittance_param.json", "w") as f:
-            f.write(json_str)
-
-        response.message = f"Admittance parameters saved as {request.param_name}."
 
     def update_admittance(self):
         # Admittance control law: M * dv/dt + D * v + K * x = F
