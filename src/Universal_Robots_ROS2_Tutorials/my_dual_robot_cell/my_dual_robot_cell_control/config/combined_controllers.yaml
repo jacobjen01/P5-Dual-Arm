@@ -24,7 +24,7 @@ controller_manager:
     alice_joint_trajectory_controller:
       type: joint_trajectory_controller/JointTrajectoryController
   
-    bob_trajectory_controller:
+    bob_joint_trajectory_controller:
       type: joint_trajectory_controller/JointTrajectoryController
 
     alice_scaled_joint_trajectory_controller:
@@ -71,7 +71,7 @@ alice_force_torque_sensor_broadcaster:
       - torque.x
       - torque.y
       - torque.z
-    frame_id: bob_tool0
+    frame_id: alice_tool0
     topic_name: alice_ft_data
 
 bob_force_torque_sensor_broadcaster:

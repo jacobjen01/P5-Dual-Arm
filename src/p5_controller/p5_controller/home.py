@@ -221,42 +221,40 @@ def move_robot_to_home(robot_name):
         rclpy.logging.get_logger(robot_name).info("Done")
 
 
-class RobotCommandListener(Node):
-    def __init__(self):
-        super().__init__("robot_command_listener")
-        self.home_service = self.create_service(RobotConfigurations, "/robot_configurations", self.handle_robot_configuration_service)
-
-    def handle_robot_configuration_service(self, request, response):
-        if request.command == "HOME":
-            switch_to_joint_control()
-            move_robot_to_home("alice")
-            move_robot_to_home("bob")
-            switch_to_position_control()
-            response.success = True
-            response.message = "Both robots homed successfully"
-        elif request.command == "ALICE_HOME":
-            switch_to_joint_control()
-            move_robot_to_home("alice")
-            switch_to_position_control()
-            response.success = True
-            response.message = "Alice homed successfully"
-        elif request.command == "BOB_HOME":
-            switch_to_joint_control()
-            move_robot_to_home("bob")
-            switch_to_position_control()
-            response.success = True
-            response.message = "Bob homed successfully"
-        else:
-            response.success = False
-            response.message = "Unknown command"
-        return response
-
+#class RobotCommandListener(Node):
+#    def __init__(self):
+#        super().__init__("robot_command_listener")
+#        self.home_service = self.create_service(RobotConfigurations, "/robot_configurations", self.handle_robot_configuration_service)
+#
+#    def handle_robot_configuration_service(self, request, response):
+#        if request.command == "HOME":
+#            switch_to_joint_control()
+#            move_robot_to_home("alice")
+#            move_robot_to_home("bob")
+#            switch_to_position_control()
+#            response.success = True
+#            response.message = "Both robots homed successfully"
+#        elif request.command == "ALICE_HOME":
+#            switch_to_joint_control()
+#            move_robot_to_home("alice")
+#            switch_to_position_control()
+#            response.success = True
+#            response.message = "Alice homed successfully"
+#        elif request.command == "BOB_HOME":
+#            switch_to_joint_control()
+#            move_robot_to_home("bob")
+#            switch_to_position_control()
+#            response.success = True
+#            response.message = "Bob homed successfully"
+#        else:
+#            response.success = False
+#            response.message = "Unknown command"
+#        return response
+#
 
 def main(args=None):
     rclpy.init(args=args)
-    node = RobotCommandListener()
-    rclpy.spin(node)
-    node.destroy_node()
+    move_robot_to_home("alice")
     rclpy.shutdown()
 
 
