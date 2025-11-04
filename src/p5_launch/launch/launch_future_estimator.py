@@ -43,11 +43,11 @@ def generate_launch_description():
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',
-            name='static_tf_mir_to_camera_node',
+            name='static_tf_alice_base_link_to_camera_node',
             arguments=[
-                '0.0', '0.0', '0.0',  # x y z (meters)
-                str(math.pi), '0', '0',        # roll pitch yaw (radians)
-                'mir',          # parent frame
+                '0.292747', '-0.328202', '-0.0318875',  # x y z (meters)
+                '0', '0', '0',        # roll pitch yaw (radians)
+                'alice_base_link',          # parent frame
                 'camera_link'         # child frame
             ]
         ),
