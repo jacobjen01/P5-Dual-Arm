@@ -7,9 +7,8 @@ Admittance control node.
 - Convert displacement vector and goal pose quanteriones to transformations matrices.
 - Combine both transformation matrices to get current end-effector pose.
 - Convert current end-effector pose transformation matrix to pose in quaternions.
-- Publisher current pose to robot_pose_before_safety topic!
+- Publisher current pose to robot_name/servo_node/pose_target_cmds topic!
 """
-import json
 
 import rclpy
 from rclpy.node import Node
@@ -54,14 +53,22 @@ class EEAdmittance(Node):
         # Load parameters
         try:
             with open('admittance_param.json', 'r') as f:
-                data = f.read()
-            self.M = np.array(data['default']['M'])
-            self.D = np.array(data['default']['D'])
-            self.K = np.array(data['default']['K'])
+                data = json.load(f)
+            self.M = np.diag(data['default']['M'])
+            self.D = np.diag(data['default']['D'])
+            self.K = np.diag(data['default']['K'])
+            self.alpha = data['default']['alpha']
         except BaseException:
             self.M = np.diag([1.5, 1.5, 1.5, 0.1, 0.1, 0.1])
             self.D = np.diag([20.0, 20.0, 20.0, 3.0, 3.0, 3.0])
             self.K = np.diag([50.0, 50.0, 50.0, 1.2, 1.2, 1.2])
+            self.alpha = 0.01
+        self.get_logger().info(
+            f"Loaded M={np.diag(self.M)}, "
+            f"D={np.diag(self.D)}, "
+            f"K={np.diag(self.K)}, "
+            f"alpha={self.alpha}"
+        )
 
         self.update_rate = 250
 
@@ -79,8 +86,8 @@ class EEAdmittance(Node):
         self.robot_goal = self.create_subscription(PoseStamped, f'/robot_pose_to_admittance_{self.robot_name}',
                                                    self.goal_cb, 10)
 
-        self.current_goal_pub = self.create_publisher(
-            PoseStamped, f'{self.robot_name}/servo_node/pose_target_cmds', 10)
+        self.current_goal_pub = self.create_publisher(PoseStamped,
+                                                      f'{self.robot_name}/servo_node/pose_target_cmds', 10)
 
         # Timer for control loop
         self.timer = self.create_timer(1 / self.update_rate, self.control_loop)
@@ -89,20 +96,21 @@ class EEAdmittance(Node):
         self.M = np.diag(request.m)
         self.D = np.diag(request.d)
         self.K = np.diag(request.k)
+        self.alpha = request.alpha
         response.message = "parameter changed"
         return response
 
     def save_param(self, request, response):
         try:
             with open("admittance_param.json", "r") as f:
-                data = f.read()
-            data = json.loads(data)
+                data = json.load(f)
         except BaseException:
             data = {}
         data[request.param_name] = {
-            "M": self.M.tolist(),
-            "D": self.D.tolist(),
-            "K": self.K.tolist()
+            "M": np.diag(self.M).tolist(),
+            "D": np.diag(self.D).tolist(),
+            "K": np.diag(self.K).tolist(),
+            "alpha": self.alpha
         }
         json_str = json.dumps(data, indent=4)
         with open("admittance_param.json", "w") as f:
@@ -119,6 +127,7 @@ class EEAdmittance(Node):
         response.m_parameter = np.diag(self.M)
         response.d_parameter = np.diag(self.D)
         response.k_parameter = np.diag(self.K)
+        response.alpha_parameter = self.alpha
         response.update_rate = self.update_rate
         return response
 
@@ -141,9 +150,8 @@ class EEAdmittance(Node):
         # self.get_logger().info(f"Force {fx, fy, fz}, Torque: {tx, ty, tz}")
         # self.wrench = FT_vector
 
-        # Low-pass filter could be added here
-        alpha = 0.01    # filter coefficient
-        self.wrench = alpha * FT_vector + (1 - alpha) * self.wrench
+        # Low-pass filter
+        self.wrench = self.alpha * FT_vector + (1 - self.alpha) * self.wrench
         # self.get_logger().info(f"Force {self.wrench}")
 
     def goal_cb(self, msg: PoseStamped):
@@ -158,14 +166,6 @@ class EEAdmittance(Node):
         self.x_goal[6] = msg.pose.orientation.w
         self.goal_received = True
         # self.get_logger().info(f"Goal position {self.x_goal}")
-
-    def change_param(self, request, response):
-        # Update admittance parameters from service request
-        self.M = np.diag(request.m)
-        self.D = np.diag(request.d)
-        self.K = np.diag(request.k)
-        response.message = "Admittance parameters updated."
-        return response
 
     def update_admittance(self):
         # Admittance control law: M * dv/dt + D * v + K * x = F
