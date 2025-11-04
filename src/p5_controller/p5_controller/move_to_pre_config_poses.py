@@ -5,6 +5,7 @@ import rclpy
 import math
 from rclpy.action import ActionClient
 
+from std_msgs.msg import Bool
 from builtin_interfaces.msg import Duration
 from action_msgs.msg import GoalStatus
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
@@ -13,7 +14,8 @@ from control_msgs.msg import JointTolerance
 
 from rclpy.node import Node
 from controller_manager_msgs.srv import SwitchController
-from p5_interfaces.srv import RobotConfigurations 
+from p5_interfaces.srv import MoveToPreDefPose 
+from p5_interfaces.srv import GetStatus 
 
 class ControllerManager(Node):
     def __init__(self):
@@ -61,11 +63,35 @@ class JTCClient(rclpy.node.Node):
 
     def __init__(self):
         super().__init__("jtc_client")
-        self.home_service = self.create_service(RobotConfigurations, "/robot_configurations", self.handle_robot_configuration_service)
+        self.home_service = self.create_service(MoveToPreDefPose, "/p5_move_to_pre_def_pose", self.handle_robot_move_to_service)
 
-    def handle_robot_configuration_service(self, request, response):
+        self.publish_status = self.create_publisher(Bool, '/p5_joint_mover_status', 10)
+        timer_period = 0.5  # seconds
+        self.timer = self.create_timer(timer_period, self.get_status)
+        self.running = False
+
+    def get_status(self):
+        msg = Bool()
+        msg.data = self.running
+        self.publish_status.publish(msg)
+
+    def handle_robot_move_to_service(self, request, response):
         self.robot_name = request.robot_name
         self.goal_name = request.goal_name
+        if self.robot_name != "alice" and self.robot_name != "bob":
+            response.success = False
+            response.message = f"Robot name {self.robot_name} is not recognized"
+            return response
+        
+        with open("pre_config_poses.json", "r") as f:
+            TRAJECTORIES = f.read()
+        TRAJECTORIES = json.loads(TRAJECTORIES)
+        try: 
+            TRAJECTORIES[self.goal_name]
+        except:
+            response.success = False
+            response.message = f"Goal name {self.goal_name} dose not exist"
+            return response
         switch_to_joint_control(self.robot_name)
         self.handle_controller()
         response.success = True
@@ -86,6 +112,7 @@ class JTCClient(rclpy.node.Node):
         self.get_logger().info(f"Waiting for action server on {controller_name}")
         self._action_client.wait_for_server()
 
+        self.running = True
         self.parse_trajectories()
         self._send_goal_future = None
         self._get_result_future = None
@@ -135,6 +162,7 @@ class JTCClient(rclpy.node.Node):
         if status == GoalStatus.STATUS_SUCCEEDED:
             time.sleep(2)
             switch_to_position_control(self.robot_name)
+            self.running = False
         else:
             if result.error_code != FollowJointTrajectory.Result.SUCCESSFUL:
                 self.get_logger().error(
