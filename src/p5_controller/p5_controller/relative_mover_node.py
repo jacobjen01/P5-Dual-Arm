@@ -256,8 +256,10 @@ class RelativeMover(Node):
 
         t = self._get_movement_time_to_goal(vec, self.robot_velocity)
 
+        vec_org = vec.copy()
+
         for i in range(self.INTERP_ITERATIONS):
-            vec = vec + t * self.goal_pose_velocity
+            vec = vec_org + t * self.goal_pose_velocity
             t = self._get_movement_time_to_goal(vec, self.robot_velocity)
 
         crd = vec + np.array(self.ee_pose_rel_base_frame[0:3])
@@ -270,6 +272,8 @@ class RelativeMover(Node):
     def _get_movement_time_to_goal(self, vec, vel):
         vel_proj = np.dot(vec, vel) / np.dot(vec, vec) * vec
         v0 = np.linalg.norm(vel_proj) * (2 * np.heaviside(np.dot(vec, vel), 1) - 1) # Gets speed for robot
+
+        v0 = self.robot_theoretical_velocity
 
         dist = np.linalg.norm(vec)
 
