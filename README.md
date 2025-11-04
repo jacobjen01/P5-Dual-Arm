@@ -7,7 +7,7 @@ address 192.168.56.<choose your number>, netmask 255.255.255.0, gateway 192.168.
 create ssh connection for the jetson with our study group number:
 
 ```bash
-gr-141@192.168.56.2 
+ssh -X gr141@192.168.56.2 
 ```
 
 Kode til Jetson: gr141
@@ -82,10 +82,4 @@ Then for launching the controller without the physical system,
 so in simulation mode, add the following to the previous command.
 ```
 alice_use_mock_hardware:=true bob_use_mock_hardware:=true
-```
-
-## Home
-To home the robot use this
-```
-ros2 service call /robot_configurations p5_interfaces/srv/RobotConfigurations "{command: 'HOME'}"
 ```
