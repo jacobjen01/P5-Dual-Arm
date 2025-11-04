@@ -1,0 +1,5 @@
+string robot_name
+string goal_name
+---
+bool success
+string message

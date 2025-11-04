@@ -229,12 +229,11 @@ def launch_setup():
         "alice_speed_scaling_state_broadcaster",
         "bob_speed_scaling_state_broadcaster",
         "alice_force_torque_sensor_broadcaster",
-        "bob_force_torque_sensor_broadcaster",
-        "alice_forward_position_controller",
-        "bob_forward_position_controller",
+        "bob_force_torque_sensor_broadcaster"
     ]
     controllers_inactive = [
-
+        "alice_forward_position_controller",
+        "bob_forward_position_controller"
     ]
 
     controller_spawners = [controller_spawner(controllers_active)] + [
