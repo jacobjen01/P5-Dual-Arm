@@ -95,7 +95,6 @@ class RelativeMover(Node):
     """
     Callback functions for topics containing value about robot velocity and goal velocity.
     """
-
     def get_goal_velocity_callback(self, msg):
         for vector in msg.vectors:
             if vector.tag_id == self.reference_frame:
