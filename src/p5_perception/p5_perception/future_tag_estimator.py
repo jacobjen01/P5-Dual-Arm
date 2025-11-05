@@ -10,7 +10,7 @@ from tf2_ros import TransformBroadcaster, Buffer, TransformListener
 import numpy as np
 from p5_safety._error_handling import ErrorHandler
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Header
 
 class FutureTagEstimator(Node):
     def __init__(self):
@@ -159,9 +159,21 @@ class FutureTagEstimator(Node):
                 # Logger bevægelsesinfo
                 self.get_logger().info(f"Tag {tag_key} motion -> dir: ({direction[0]:.3f}, {direction[1]:.3f}, {direction[2]:.3f}), speed: {speed:.3f} m/s")
 
-                # Laver og tilføjer Tagvector besked til output array
-                vector = Tagvector(tag_id=child, tag_id_only_nr=int(tag_key), vx=direction[0], vy=direction[1], vz=direction[2],
-                                vx_unit=direction_unit[0], vy_unit=direction_unit[1], vz_unit=direction_unit[2], speed=speed)
+                # Opretter Tagvector besked for dette tag
+                vector = Tagvector()
+                vector.header = Header()
+                vector.header.stamp = self.get_clock().now().to_msg()
+                vector.header.frame_id = "Tagvector"
+                vector.tag_id = child
+                vector.tag_id_only_nr=int(tag_key)
+                vector.vx = direction[0]
+                vector.vy = direction[1]
+                vector.vz = direction[2]
+                vector.vx_unit = direction_unit[0]
+                vector.vy_unit = direction_unit[1]
+                vector.vz_unit = direction_unit[2]
+                vector.speed = speed
+
                 msg_out_array.vectors.append(vector)
             
             # Publiserer TagvectorArray beskeden

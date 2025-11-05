@@ -42,8 +42,8 @@ def generate_launch_description():
             cmd=[[
                 FindExecutable(name='ros2'),
                 " service call ",
-                "/robot_configurations ",
-                "p5_interfaces/srv/RobotConfigurations ",
+                "/p5_move_to_pre_def_pose ",
+                "p5_interfaces/srv/MoveToPreDefPose ",
                 "\"{robot_name: 'alice', goal_name: 'ALICE_HOME'}\"",
             ]],
             shell=True
