@@ -53,52 +53,10 @@ class RelativeMover(Node):
         self.pose_publisher = self.create_publisher(PoseStamped, f"{self.robot_prefix}/servo_node/pose_target_cmds", 10) #f"{self.robot_prefix}_robot_pose_for_admittance_control"
         self.velocity_subscriber = self.create_subscription(Tagvector, "/future_tag_vector", self.get_goal_velocity_callback, 10)
 
-        # self.set_linear_movement_service = self.create_service(SetLinearMovement, 'set_linear_movement', self.set_linear_movement_callback)
-        # self.set_tf_tree_service = self.create_service(SetReferenceFrame, 'set_reference_frame', self.set_reference_frame_callback)
         self.move_to_pose_service = self.create_service(MoveToPose, f'{self.robot_prefix}/move_to_pose', self.move_to_pose_callback)
 
         self.timer_get_ee_pose_respect_to_base = self.create_timer(1 / self.UPDATE_RATE,
                                                                    self.get_ee_pose_respect_to_base)
-
-    # """
-    # Function callback from service to determine if the robot shall move in cartesian or joint space.
-    # """
-    # def set_linear_movement_callback(self, request, response):
-    #     try:
-    #         self.linear_movement = request.linear
-    #         self.linear_movement_use_tracking_velocity = request.use_tracking_velocity
-    #
-    #         self.get_logger().info(f"Received request for linear movement {self.linear_movement}, {self.linear_movement_use_tracking_velocity}")
-    #
-    #         response.resp = True
-    #         return response
-    #
-    #     except Exception as e:
-    #         self.get_logger().error(e)
-    #         self.error_handler.report_error(self.error_handler.fatal, f"Failed to send true response. Error: {e}")
-    #
-    #         response.resp = False
-    #         return response
-    #
-    # """
-    # Function to set the reference frame, the robot shall move in respect to.
-    # """
-    # def set_reference_frame_callback(self, request, response):
-    #     self.reference_frame = None
-    #     try:
-    #         self.reference_frame = request.frame
-    #
-    #         self.get_logger().info(f"Received request for reference frame {self.reference_frame}")
-    #
-    #         response.resp = True
-    #         return response
-    #
-    #     except Exception as e:
-    #         self.get_logger().error(e)
-    #         self.error_handler.report_error(self.error_handler.fatal, f"Failed to send true response. Error: {e}")
-    #
-    #         response.resp = False
-    #         return response
 
     """
     Function callback to execute linear movement.
@@ -301,18 +259,6 @@ class RelativeMover(Node):
     Publishes goal pose
     """
     def _publish_pose(self, pose):
-        # t = Pose()
-        #
-        # t.position.x = pose[0]
-        # t.position.y = pose[1]
-        # t.position.z = pose[2]
-        # t.orientation.x = pose[3]
-        # t.orientation.y = pose[4]
-        # t.orientation.z = pose[5]
-        # t.orientation.w = pose[6]
-        #
-        # self.pose_publisher.publish(t)
-
         pose_goal = PoseStamped()
         pose_goal.header.frame_id = "alice_base_link"  # "link_base"
 
@@ -332,16 +278,14 @@ class RelativeMover(Node):
     """
     def _linear_motion_predictor(self, goal_pose_rel_base_frame):
         crd_ee_start = np.array(self.ee_pose_rel_base_frame_start_frame[0:3])
-        crd_ee = np.array(self.ee_pose_rel_base_frame_theoretical[0:3]) #np.array(self.ee_pose_rel_base_frame[0:3])
+        crd_ee = np.array(self.ee_pose_rel_base_frame_theoretical[0:3])
         crd_goal = np.array(goal_pose_rel_base_frame[0:3])
         quat_ee = np.array(self.ee_pose_rel_base_frame[3:7])
         quat_goal = np.array(goal_pose_rel_base_frame[3:7])
 
-        # self.get_logger().info(f"crd_ee_start: {crd_ee_start}, crd_ee: {crd_ee}, crd_goal: {crd_goal}, quat_ee_start: {quat_ee_start}, quat_goal: {quat_goal}")
-
         dist = np.linalg.norm(crd_goal - crd_ee)
 
-        vel = self.robot_theoretical_velocity #np.linalg.norm(self.robot_velocity) #
+        vel = self.robot_theoretical_velocity
 
         if dist < 0.01:
             return np.concatenate([crd_goal, quat_goal])
@@ -384,32 +328,6 @@ class RelativeMover(Node):
         new_pose = np.concatenate([new_crd, new_quat])
 
         self.ee_pose_rel_base_frame_theoretical = new_pose
-
-        # if self.i % 100 == 0:
-        #     self.get_logger().info(f"start crd {crd_ee}, goal crd {crd_goal}, new crd {new_crd}")
-        #     self.get_logger().info(f"step dir {(crd_goal - crd_ee) / dist}, step {step} ")
-        #     self.get_logger().info(f"frac: {frac}, at 0 {slerp([0.0]).as_quat()[0]}, at 1 {slerp([1.0]).as_quat()[0]}")
-        #
-        #     self.get_logger().info(f"goal pose: {goal_pose_rel_base_frame}")
-        #     self.get_logger().info(f"new pose: {new_pose}")
-        #
-        #     t = TransformStamped()
-        #     t.header.stamp = self.get_clock().now().to_msg()
-        #     t.header.frame_id = self.reference_frame
-        #     t.child_frame_id = f"{self.robot_prefix}_test_frame"
-        #
-        #     t.transform.translation.x = new_pose[0]
-        #     t.transform.translation.y = new_pose[1]
-        #     t.transform.translation.z = new_pose[2]
-        #
-        #     t.transform.rotation.x = new_pose[3]
-        #     t.transform.rotation.y = new_pose[4]
-        #     t.transform.rotation.z = new_pose[5]
-        #     t.transform.rotation.w = new_pose[6]
-        #
-        #     self.tf_broadcaster.sendTransform(t)
-        #
-        # self.i += 1
 
         return new_pose
 
