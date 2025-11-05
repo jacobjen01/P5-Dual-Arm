@@ -7,7 +7,7 @@ address 192.168.56.<choose your number>, netmask 255.255.255.0, gateway 192.168.
 create ssh connection for the jetson with our study group number:
 
 ```bash
-gr-141@192.168.56.2 
+ssh -X gr141@192.168.56.2 
 ```
 
 Kode til Jetson: gr141
@@ -71,7 +71,8 @@ This should show a pair of eyes. Press Ctrl+C to close it again.
 
 
 
-## Robot controller
+## Robot control
+### Launch the controller
 The robot controller both be launched with the physical system and without the physical system.
 
 To launch the controller with the physical system run the following command.
@@ -83,9 +84,11 @@ so in simulation mode, add the following to the previous command.
 ```
 alice_use_mock_hardware:=true bob_use_mock_hardware:=true
 ```
-
-## Home
-To home the robot use this
+### Move the robot
+#### Using the pre defined poses
+To move the robot to the predefined poses that is saved in 'pre_config_poses.json' use the following command.
 ```
-ros2 service call /robot_configurations p5_interfaces/srv/RobotConfigurations "{command: 'HOME'}"
+ros2 service call /p5_move_to_pre_def_pose p5_interfaces/srv/MoveToPreDefPose "{robot_name: 'alice', goal_name: 'ALICE_HOME'}"
 ```
+In the previous command alice can be replaced with the robot you want to move,
+and ALICE_HOME can be replaced with the goal you want.

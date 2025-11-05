@@ -5,8 +5,22 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package='p5_controller',
-            executable='home',
-            name='robot_command_listener',
+            executable='move_to_pre_config_poses',
+            name='move_to_pre_config_poses',
             output='screen'
+        ),
+        Node(
+            package='p5_controller',
+            executable='admittance_node',
+            name='alice_admittance_node',
+            output='screen',
+            parameters=[{'robot_name': 'alice'}]
+        ),
+        Node(
+            package='p5_controller',
+            executable='admittance_node',
+            name='bob_admittance_node',
+            output='screen',
+            parameters=[{'robot_name': 'bob'}]
         )
     ])

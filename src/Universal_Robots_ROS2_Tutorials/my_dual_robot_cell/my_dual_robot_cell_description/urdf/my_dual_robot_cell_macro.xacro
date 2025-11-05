@@ -58,26 +58,26 @@
       <color rgba="1 1 1 1"/>
     </material>
 	
-    <joint name="table" type="fixed">
-      <xacro:insert_block name="origin" />
-      <parent link="world" />
-      <child link="table" />
-    </joint>
+	<!--<joint name="table" type="fixed">-->
+	<!--<xacro:insert_block name="origin" />-->
+	<!--<parent link="world" />-->
+	<!--<child link="table" />-->
+	<!--</joint>-->
 
-    <link name="table">
-      <visual>
-        <geometry>
-          <mesh filename="package://my_robot_cell_description/meshes/fzi_table.dae"/>
-        </geometry>
-        <origin rpy="0 0 0" xyz="0.75 0.5 -1"/>
-      </visual>
-      <collision>
-        <geometry>
-          <mesh filename="package://my_robot_cell_description/meshes/fzi_table.dae"/>
-        </geometry>
-        <origin rpy="0 0 0" xyz="0.75 0.5 -1"/>
-      </collision>
-    </link>
+	<!--<link name="table">-->
+	<!--<visual>-->
+	<!--<geometry>-->
+	<!--<mesh filename="package://my_robot_cell_description/meshes/fzi_table.dae"/>-->
+	<!--</geometry>-->
+	<!--<origin rpy="0 0 0" xyz="0.75 0.5 -1"/>-->
+	<!--</visual>-->
+	<!--<collision>-->
+	<!--<geometry>-->
+	<!--<mesh filename="package://my_robot_cell_description/meshes/fzi_table.dae"/>-->
+	<!--</geometry>-->
+	<!--<origin rpy="0 0 0" xyz="0.75 0.5 -1"/>-->
+	<!--</collision>-->
+	<!--</link>-->
 
     <!--Creates the mounts to attach the robots to the table-->
     <link name="alice_robot_mount"/>

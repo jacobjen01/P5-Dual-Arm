@@ -229,12 +229,11 @@ def launch_setup():
         "alice_speed_scaling_state_broadcaster",
         "bob_speed_scaling_state_broadcaster",
         "alice_force_torque_sensor_broadcaster",
-        "bob_force_torque_sensor_broadcaster",
-        "alice_forward_position_controller",
-        "bob_forward_position_controller",
+        "bob_force_torque_sensor_broadcaster"
     ]
     controllers_inactive = [
-
+        "alice_forward_position_controller",
+        "bob_forward_position_controller"
     ]
 
     controller_spawners = [controller_spawner(controllers_active)] + [
@@ -331,7 +330,7 @@ def launch_setup():
         bob_initial_joint_controller_spawner_stopped,
         alice_initial_joint_controller_spawner_started,
         bob_initial_joint_controller_spawner_started,
-        #robot_listener_launch,
+        robot_listener_launch,
     ] + controller_spawners
 
     return nodes_to_start
