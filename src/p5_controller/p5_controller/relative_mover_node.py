@@ -55,7 +55,7 @@ class RelativeMover(Node):
 
         # self.set_linear_movement_service = self.create_service(SetLinearMovement, 'set_linear_movement', self.set_linear_movement_callback)
         # self.set_tf_tree_service = self.create_service(SetReferenceFrame, 'set_reference_frame', self.set_reference_frame_callback)
-        self.move_to_pose_service = self.create_service(MoveToPose, 'move_to_pose', self.move_to_pose_callback)
+        self.move_to_pose_service = self.create_service(MoveToPose, f'{self.robot_prefix}/move_to_pose', self.move_to_pose_callback)
 
         self.timer_get_ee_pose_respect_to_base = self.create_timer(1 / self.UPDATE_RATE,
                                                                    self.get_ee_pose_respect_to_base)
@@ -139,9 +139,10 @@ class RelativeMover(Node):
     """
 
     def get_goal_velocity_callback(self, msg):
-        if msg.tag_id == self.reference_frame:
-            self.goal_pose_velocity = np.array([msg.vx_unit, msg.vy_unit, msg.vz_unit])
-            self.get_logger().info(f"Received velocity {[msg.vx_unit, msg.vy_unit, msg.vz_unit]}")
+        for vector in msg.vectors:
+            if vector.tag_id == self.reference_frame:
+                self.goal_pose_velocity = np.array([vector.vx_unit, vector.vy_unit, vector.vz_unit])
+                self.get_logger().info(f"Received velocity {[vector.vx_unit, vector.vy_unit, vector.vz_unit]}")
 
 
     """

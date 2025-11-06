@@ -25,7 +25,7 @@ class TestNodeForBase(Node):
     def send_request(self):
         # pose = [0.3, -0.5, 0.4, 1.0, 0.0, 0.0, 0.0]
         # pose = [0.3, 0.5, 0.4, 1.0, 0.0, 0.0, 0.0]
-        pose = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+        pose = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
         self.req.pose.position.x = pose[0]
         self.req.pose.position.y = pose[1]
         self.req.pose.position.z = pose[2]
