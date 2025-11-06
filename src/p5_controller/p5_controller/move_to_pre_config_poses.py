@@ -62,7 +62,7 @@ class JTCClient(rclpy.node.Node):
     """Small test client for the jtc."""
 
     def __init__(self):
-        super().__init__("jtc_client")
+        super().__init__("move_to_pre_config_poses")
         self.home_service = self.create_service(MoveToPreDefPose, "/p5_move_to_pre_def_pose", self.handle_robot_move_to_service)
 
         self.publish_status = self.create_publisher(Bool, '/p5_joint_mover_status', 10)
@@ -83,7 +83,7 @@ class JTCClient(rclpy.node.Node):
             response.message = f"Robot name {self.robot_name} is not recognized"
             return response
         
-        with open("pre_config_poses.json", "r") as f:
+        with open("config/pre_config_poses.json", "r") as f:
             TRAJECTORIES = f.read()
         TRAJECTORIES = json.loads(TRAJECTORIES)
         try: 
@@ -119,7 +119,7 @@ class JTCClient(rclpy.node.Node):
         self.execute_trajectory()
 
     def parse_trajectories(self):
-        with open("pre_config_poses.json", "r") as f:
+        with open("config/pre_config_poses.json", "r") as f:
             TRAJECTORIES = f.read()
         TRAJECTORIES = json.loads(TRAJECTORIES)
             

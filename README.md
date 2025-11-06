@@ -92,3 +92,12 @@ ros2 service call /p5_move_to_pre_def_pose p5_interfaces/srv/MoveToPreDefPose "{
 ```
 In the previous command alice can be replaced with the robot you want to move,
 and ALICE_HOME can be replaced with the goal you want.
+
+## Robot configurations 
+### Configure predefined poses
+To configure predefined poses run the following service call.
+```
+ros2 service call /p5_pose_config p5_interfaces/srv/PoseConfig "{pose: pose_name, joints: [j1, j2, j3, j4, j5, j6]}"
+```
+This saves the new joint angles to a json file. If the pose name already exists the pose will be updated.
+If the pose dose not exists a new pose will be added to the file.
