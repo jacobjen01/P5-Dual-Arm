@@ -6,6 +6,7 @@ import threading
 
 from rclpy.node import Node
 from tf2_ros import TransformBroadcaster, Buffer, TransformListener
+from p5_safety._error_handling import ErrorHandler
 
 from p5_interfaces.srv import LoadProgram, RunProgram, MoveToPose, MoveToPreDefPose
 
@@ -25,15 +26,17 @@ class ProgramExecutor(Node):
             "admittance": self._command_admittance,
         }
 
+        self.error_handler = ErrorHandler(self)
+
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+
         self.load_program_service = self.create_service(LoadProgram, f'program_executor/load_program',
                                                         self.load_program_callback)
         self.run_program_service = self.create_service(RunProgram, f'program_executor/run_program',
                                                        self.run_program_callback)
 
-        self.timer_time_stepper = self.create_timer(self.SLEEP_TIME, self.timer_time_stepper)
-
-        self.time_step_id = 0
-        self.cache = {}
+        self.cache = {} # Stores temporary values which multiple threads require access to.
         self.threads = []
 
         self.program = None
@@ -67,9 +70,6 @@ class ProgramExecutor(Node):
 
         else:
             pass # evt. kode for at håndtere stop af program.
-
-    def time_stepper(self):
-        self.time_step_id += 1
 
     def _run_program_thread(self, thread_data):
         name = thread_data['name']
@@ -131,13 +131,24 @@ class ProgramExecutor(Node):
             self.cache[cache_id].append(name)
 
             while not len(self.cache[cache_id]) == len(args['threads']):
-                self._time_step()
+                continue
 
         else:
             self.cache[cache_id] = []
 
     def _command_frame_availability(self, name, robot_name, args):
-        pass
+        frame = args['frame_name']
+        try:
+            frames = self.tf_buffer.all_frames_as_string()
+
+            while not frame in frames:
+                continue
+
+        except Exception as e:
+            self.get_logger().warn(f"Could not get frames: {e}")
+            self.error_handler.report_error(self.error_handler.info,
+                                            f'Could not get frames: {e}')
+            self._command_frame_availability(name, robot_name, args)
 
     def _command_grip(self, name, robot_name, args):
         pass
@@ -145,18 +156,9 @@ class ProgramExecutor(Node):
     def _command_admittance(self, name, robot_name, args):
         pass
 
-    def _time_step(self):
-        prev_time_step_id = self.time_step_id
-
-        while prev_time_step_id  == self.time_step_id:
-            continue
-
-        return
-
     def _get_client_and_request(self, datatype, service):
         client = self.create_client(datatype, service)
 
-        # Getting the client up and running
         while not client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info("Service not available, waiting...")
 
