@@ -9,23 +9,16 @@ class PoseConfigListener(Node):
 
     def __init__(self):
         super().__init__('pose_config_listener')
-        self.srv = self.create_service(PoseConfig, '/pose_config', self.change_pose)
+        self.srv = self.create_service(PoseConfig, '/p5_pose_config', self.change_pose)
 
     def change_pose(self, request, response):
         try:
-            with open("pre_config_poses.json", "r") as f:
+            with open("config/pre_config_poses.json", "r") as f:
                 data = f.read()
             data = json.loads(data)
         except:
             data = {}
-        data[request.pose] = [
-                request.joint_1,
-                request.joint_2,
-                request.joint_3,
-                request.joint_4,
-                request.joint_5,
-                request.joint_6
-        ]
+        data[request.pose] = request.joints
         json_str = json.dumps(data, indent=4)
         with open("pre_config_poses.json", "w") as f:
             f.write(json_str)

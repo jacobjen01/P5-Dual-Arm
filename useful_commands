@@ -70,3 +70,10 @@ xeyes
 	
 	Hvis det retunere en fejl kør denne kommand
 xhost +local:root 
+
+	To launch robot
+ros2 launch my_dual_robot_cell_control start_robots.launch.py
+
+	With mock hardware
+ros2 launch my_dual_robot_cell_control start_robots.launch.py alice_use_mock_hardware:=true bob_use_mock_hardware:=true
+

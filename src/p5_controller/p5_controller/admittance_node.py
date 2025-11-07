@@ -28,27 +28,31 @@ from p5_interfaces.srv import AdmittanceSetStatus
 class EEAdmittance(Node):
     def __init__(self):
         super().__init__('ee_admittance')
-
         self.robot_name = self.declare_parameter('robot_name', 'alice')
         self.robot_name = self.get_parameter('robot_name').value
 
         # Create service servers
-        self.config = self.create_service(AdmittanceConfig,
-                                          '/admittance_config', self.change_param)
+        self.active = True
+        self.config = self.create_service(
+            AdmittanceConfig,
+            self.robot_name +
+            '/admittance_config',
+            self.change_param)
         self.save = self.create_service(
             SaveAdmittanceParam,
+            self.robot_name +
             '/save_admittance_param',
             self.save_param)
         self.status = self.create_service(
             AdmittanceShowStatus,
+            self.robot_name +
             '/admittance_show_staus',
             self.show_status)
         self.status_set = self.create_service(
-            AdmittanceSetStatus, '/admittance_set_staus', self.set_status)
-
-        # Robot name parameter.
-        self.robot_name = 'alice'
-        self.active = True
+            AdmittanceSetStatus,
+            self.robot_name +
+            '/admittance_set_staus',
+            self.set_status)
 
         # Load parameters
         try:
@@ -241,7 +245,7 @@ class EEAdmittance(Node):
         pose_msg.pose.orientation.w = float(current_pose[6])
 
         self.current_goal_pub.publish(pose_msg)
-        self.get_logger().info(f'Current position: {pose_msg}')
+        self.get_logger().info(f"Goal position {pose_msg}")
 
 
 def main(args=None):
