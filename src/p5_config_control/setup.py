@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'p2p_movement'
+package_name = 'p5_config_control'
 
 setup(
     name=package_name,
@@ -13,8 +13,8 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='ubuntu',
-    maintainer_email='ubuntu@todo.todo',
+    maintainer='root',
+    maintainer_email='root@todo.todo',
     description='TODO: Package description',
     license='TODO: License declaration',
     extras_require={
@@ -24,10 +24,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'home = p2p_movement.home:main',
-            'bob_example = p2p_movement.bob_example:main',
-            'alice_example = p2p_movement.alice_example:main',
-            'cancel_goal_example = p2p_movement.cancel_goal_example:main',
+            'config_node_config = p5_config_control.config_node_config:main',
+            'config_node_controller = p5_config_control.config_node_controller:main'
         ],
     },
 )
