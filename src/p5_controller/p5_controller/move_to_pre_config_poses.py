@@ -2,7 +2,6 @@ import time
 import json
 
 import rclpy
-import math
 from rclpy.action import ActionClient
 
 from std_msgs.msg import Bool
@@ -14,8 +13,8 @@ from control_msgs.msg import JointTolerance
 
 from rclpy.node import Node
 from controller_manager_msgs.srv import SwitchController
-from p5_interfaces.srv import MoveToPreDefPose 
-from p5_interfaces.srv import GetStatus 
+from p5_interfaces.srv import MoveToPreDefPose
+
 
 class ControllerManager(Node):
     def __init__(self):
@@ -56,7 +55,6 @@ def switch_to_position_control(robot_name):
     controller_manager.switch_controller(controllers_to_stop, controllers_to_start)
 
     controller_manager.destroy_node()
-
 
 class JTCClient(rclpy.node.Node):
     """Small test client for the jtc."""

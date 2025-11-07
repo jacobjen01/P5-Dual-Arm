@@ -101,3 +101,12 @@ ros2 service call /p5_pose_config p5_interfaces/srv/PoseConfig "{pose: pose_name
 ```
 This saves the new joint angles to a json file. If the pose name already exists the pose will be updated.
 If the pose dose not exists a new pose will be added to the file.
+
+### Open and close end-effector
+To open and close the end-effector run the following service call.
+```
+ros2 service call /bob_io_and_status_controller/set_io ur_msgs/srv/SetIO "{fun: 1, pin: 17, state: <state>}"
+```
+State must be set to ether 1 or 0 depending on if the end-effector needs to open or close.
+NOTE it is not tested on the physical robot, so the pin might not be 17 and which state is open and which
+is close is not known.
