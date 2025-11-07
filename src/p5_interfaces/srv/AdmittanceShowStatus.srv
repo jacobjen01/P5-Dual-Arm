@@ -5,4 +5,5 @@ string robot_name
 float32[6] m_parameter
 float32[6] d_parameter
 float32[6] k_parameter
+float32 alpha_parameter
 int32 update_rate

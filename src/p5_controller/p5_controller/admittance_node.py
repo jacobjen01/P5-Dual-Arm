@@ -1,54 +1,78 @@
 """
 Admittance control node.
-- Defines virtual dynamics constants (mass, damping and stiffness).
+- Create service calls for mass, damping and stifness declaretion.
 - Subscribes to force/torque sensor data
 - Calculate end-effector displacement based on the dynamics.
 - Get goal pose from PoseStamped topic.
 - Convert displacement vector and goal pose quanteriones to transformations matrices.
 - Combine both transformation matrices to get current end-effector pose.
 - Convert current end-effector pose transformation matrix to pose in quaternions.
-- Publisher current pose to robot_pose_before_safety topic!
+- Publisher current pose to robot_name/servo_node/pose_target_cmds topic!
 """
-import json
 
 import rclpy
 from rclpy.node import Node
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 from geometry_msgs.msg import WrenchStamped, PoseStamped
+from p5_interfaces.srv import AdmittanceConfig
+from p5_interfaces.srv import SaveAdmittanceParam
+import json
 
-from p5_interfaces.srv import AdmittanceConfig 
-from p5_interfaces.srv import SaveAdmittanceParam 
-from p5_interfaces.srv import AdmittanceShowStatus 
-from p5_interfaces.srv import AdmittanceSetStatus 
+from p5_interfaces.srv import AdmittanceConfig
+from p5_interfaces.srv import SaveAdmittanceParam
+from p5_interfaces.srv import AdmittanceShowStatus
+from p5_interfaces.srv import AdmittanceSetStatus
 
 
 class EEAdmittance(Node):
     def __init__(self):
         super().__init__('ee_admittance')
-        self.declare_parameter("robot_name", "alice")
-        # Robot name parameter.
-        self.robot_name = self.get_parameter("robot_name").value 
+        self.robot_name = self.declare_parameter('robot_name', 'alice')
+        self.robot_name = self.get_parameter('robot_name').value
+
+        # Create service servers
         self.active = True
-
-        self.config = self.create_service(AdmittanceConfig, self.robot_name+'/admittance_config', self.change_param)
-        self.save = self.create_service(SaveAdmittanceParam, self.robot_name+'/save_admittance_param', self.save_param)
-        self.status = self.create_service(AdmittanceShowStatus, self.robot_name+'/admittance_show_staus', self.show_status)
-        self.status_set = self.create_service(AdmittanceSetStatus, self.robot_name+'/admittance_set_staus', self.set_status)
-        
-
+        self.config = self.create_service(
+            AdmittanceConfig,
+            self.robot_name +
+            '/admittance_config',
+            self.change_param)
+        self.save = self.create_service(
+            SaveAdmittanceParam,
+            self.robot_name +
+            '/save_admittance_param',
+            self.save_param)
+        self.status = self.create_service(
+            AdmittanceShowStatus,
+            self.robot_name +
+            '/admittance_show_staus',
+            self.show_status)
+        self.status_set = self.create_service(
+            AdmittanceSetStatus,
+            self.robot_name +
+            '/admittance_set_staus',
+            self.set_status)
 
         # Load parameters
         try:
             with open('admittance_param.json', 'r') as f:
-                data = f.read()
-            self.M = np.array(data['default']['M'])
-            self.D = np.array(data['default']['D'])
-            self.K = np.array(data['default']['K'])
-        except:
+                data = json.load(f)
+            self.M = np.diag(data['default']['M'])
+            self.D = np.diag(data['default']['D'])
+            self.K = np.diag(data['default']['K'])
+            self.alpha = data['default']['alpha']
+        except BaseException:
             self.M = np.diag([1.5, 1.5, 1.5, 0.1, 0.1, 0.1])
             self.D = np.diag([20.0, 20.0, 20.0, 3.0, 3.0, 3.0])
             self.K = np.diag([50.0, 50.0, 50.0, 1.2, 1.2, 1.2])
+            self.alpha = 0.01
+        self.get_logger().info(
+            f"Loaded M={np.diag(self.M)}, "
+            f"D={np.diag(self.D)}, "
+            f"K={np.diag(self.K)}, "
+            f"alpha={self.alpha}"
+        )
 
         self.update_rate = 250
 
@@ -66,30 +90,31 @@ class EEAdmittance(Node):
         self.robot_goal = self.create_subscription(PoseStamped, f'/robot_pose_to_admittance_{self.robot_name}',
                                                    self.goal_cb, 10)
 
-        self.current_goal_pub = self.create_publisher(
-            PoseStamped, f'{self.robot_name}/servo_node/pose_target_cmds', 10)
+        self.current_goal_pub = self.create_publisher(PoseStamped,
+                                                      f'{self.robot_name}/servo_node/pose_target_cmds', 10)
 
         # Timer for control loop
-        self.timer = self.create_timer(1/self.update_rate, self.control_loop)
+        self.timer = self.create_timer(1 / self.update_rate, self.control_loop)
 
     def change_param(self, request, response):
         self.M = np.diag(request.m)
         self.D = np.diag(request.d)
         self.K = np.diag(request.k)
+        self.alpha = request.alpha
         response.message = "parameter changed"
         return response
 
     def save_param(self, request, response):
         try:
             with open("admittance_param.json", "r") as f:
-                data = f.read()
-            data = json.loads(data)
-        except:
+                data = json.load(f)
+        except BaseException:
             data = {}
         data[request.param_name] = {
-                "M": self.M.tolist(),
-                "D": self.D.tolist(),
-                "K": self.K.tolist()
+            "M": np.diag(self.M).tolist(),
+            "D": np.diag(self.D).tolist(),
+            "K": np.diag(self.K).tolist(),
+            "alpha": self.alpha
         }
         json_str = json.dumps(data, indent=4)
         with open("admittance_param.json", "w") as f:
@@ -100,12 +125,13 @@ class EEAdmittance(Node):
         return response
 
     def show_status(self, request, response):
-        req = request.show
+        request = request.show
         response.active = self.active
         response.robot_name = self.robot_name
         response.m_parameter = np.diag(self.M)
         response.d_parameter = np.diag(self.D)
         response.k_parameter = np.diag(self.K)
+        response.alpha_parameter = self.alpha
         response.update_rate = self.update_rate
         return response
 
@@ -126,11 +152,10 @@ class EEAdmittance(Node):
         # Store as numpy vector for admittance law
         FT_vector = np.array([fx, fy, fz, tx, ty, tz])
         # self.get_logger().info(f"Force {fx, fy, fz}, Torque: {tx, ty, tz}")
-        #self.wrench = FT_vector
+        # self.wrench = FT_vector
 
-        # Low-pass filter could be added here
-        alpha = 0.01    # filter coefficient
-        self.wrench = alpha * FT_vector + (1 - alpha) * self.wrench
+        # Low-pass filter
+        self.wrench = self.alpha * FT_vector + (1 - self.alpha) * self.wrench
         # self.get_logger().info(f"Force {self.wrench}")
 
     def goal_cb(self, msg: PoseStamped):
@@ -153,11 +178,14 @@ class EEAdmittance(Node):
 
         M_inv = np.linalg.inv(self.M)
         a_ee = M_inv @ (self.wrench - self.D @ self.v_ee - self.K @ self.x_ee)
+        indices = np.where(a_ee[:3] > 1.5)[0]
+        a_ee[indices] = 1.5
 
-         
         # Update velocity and position  (forward Euler integration)
-        dt = 1/self.update_rate
+        dt = 1 / self.update_rate
         self.v_ee += a_ee * dt
+        indices = np.where(self.v_ee[:3] > 0.6)[0]
+        self.v_ee[indices] = 0.6
         self.x_ee += self.v_ee * dt
 
     def get_TM_displacement(self):
@@ -198,7 +226,7 @@ class EEAdmittance(Node):
     def control_loop(self):
         # Only run admittance if we have a goal
         if not self.goal_received:
-          return
+            return
         self.update_admittance()
         # Get current pose in quaternions.
         current_pose = self.convert_TM_to_pose()

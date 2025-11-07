@@ -34,9 +34,11 @@ class ControllerManager(Node):
         rclpy.spin_until_future_complete(self, future)
 
         if future.result() is not None:
-            self.get_logger().info(f'Successfully switched controllers: {controllers_to_stop} -> {controllers_to_start}')
+            self.get_logger().info(
+                f'Successfully switched controllers: {controllers_to_stop} -> {controllers_to_start}')
         else:
             self.get_logger().error('Failed to call service: %r' % future.exception())
+
 
 def switch_to_joint_control(robot_name):
     controller_manager = ControllerManager()
@@ -46,6 +48,7 @@ def switch_to_joint_control(robot_name):
     controller_manager.switch_controller(controllers_to_stop, controllers_to_start)
 
     controller_manager.destroy_node()
+
 
 def switch_to_position_control(robot_name):
     controller_manager = ControllerManager()
@@ -61,7 +64,10 @@ class JTCClient(rclpy.node.Node):
 
     def __init__(self):
         super().__init__("move_to_pre_config_poses")
-        self.home_service = self.create_service(MoveToPreDefPose, "/p5_move_to_pre_def_pose", self.handle_robot_move_to_service)
+        self.home_service = self.create_service(
+            MoveToPreDefPose,
+            "/p5_move_to_pre_def_pose",
+            self.handle_robot_move_to_service)
 
         self.publish_status = self.create_publisher(Bool, '/p5_joint_mover_status', 10)
         timer_period = 0.5  # seconds
@@ -80,13 +86,13 @@ class JTCClient(rclpy.node.Node):
             response.success = False
             response.message = f"Robot name {self.robot_name} is not recognized"
             return response
-        
+
         with open("config/pre_config_poses.json", "r") as f:
             TRAJECTORIES = f.read()
         TRAJECTORIES = json.loads(TRAJECTORIES)
-        try: 
+        try:
             TRAJECTORIES[self.goal_name]
-        except:
+        except BaseException:
             response.success = False
             response.message = f"Goal name {self.goal_name} dose not exist"
             return response
@@ -97,14 +103,15 @@ class JTCClient(rclpy.node.Node):
         return response
 
     def handle_controller(self):
-        controller_name = self.robot_name+"_scaled_joint_trajectory_controller/follow_joint_trajectory"
-        self.joints = [ 
-                    self.robot_name+"_shoulder_pan_joint",
-                    self.robot_name+"_shoulder_lift_joint",
-                    self.robot_name+"_elbow_joint",
-                    self.robot_name+"_wrist_1_joint",
-                    self.robot_name+"_wrist_2_joint",
-                    self.robot_name+"_wrist_3_joint"
+        controller_name = self.robot_name + "_scaled_joint_trajectory_controller/follow_joint_trajectory"
+        self.joints = [
+            self.robot_name + "_shoulder_pan_joint",
+            self.robot_name + "_shoulder_lift_joint",
+            self.robot_name + "_elbow_joint",
+            self.robot_name + "_wrist_1_joint",
+            self.robot_name + "_wrist_2_joint",
+            self.robot_name + "_wrist_3_joint"
+
         ]
         self._action_client = ActionClient(self, FollowJointTrajectory, controller_name)
         self.get_logger().info(f"Waiting for action server on {controller_name}")
@@ -120,7 +127,7 @@ class JTCClient(rclpy.node.Node):
         with open("config/pre_config_poses.json", "r") as f:
             TRAJECTORIES = f.read()
         TRAJECTORIES = json.loads(TRAJECTORIES)
-            
+
         self.goal_pose = JointTrajectory()
         self.goal_pose.joint_names = self.joints
         point = JointTrajectoryPoint()
@@ -166,7 +173,7 @@ class JTCClient(rclpy.node.Node):
                 self.get_logger().error(
                     f"Done with result: {self.error_code_to_str(result.error_code)}"
                 )
-            #raise RuntimeError("Executing trajectory failed. " + result.error_string)
+            # raise RuntimeError("Executing trajectory failed. " + result.error_string)
 
     @staticmethod
     def error_code_to_str(error_code):
