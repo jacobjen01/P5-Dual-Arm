@@ -22,6 +22,7 @@ class RobotProtectiveStop(Node):
             '/robot_pose_before_safety_alice',
             self.pose_alice_callback,
             10)
+
         self.pose_sub_b = self.create_subscription(
             PoseStamped,
             '/robot_pose_before_safety_bob',
@@ -92,10 +93,7 @@ class RobotProtectiveStop(Node):
             pose.pose.orientation.z = self.protective_stop_bob[5]
             pose.pose.orientation.w = self.protective_stop_bob[6]
 
-
         self.pose_pub_bob.publish(pose)
-
-
 
     def protective_stop_callback(self, msg: Bool,):
         if msg.data and not self.protective_stop_active:
