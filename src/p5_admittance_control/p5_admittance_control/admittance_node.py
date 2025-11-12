@@ -19,49 +19,45 @@ from p5_interfaces.srv import AdmittanceConfig
 from p5_interfaces.srv import SaveAdmittanceParam
 import json
 
-from p5_interfaces.srv import AdmittanceConfig
-from p5_interfaces.srv import SaveAdmittanceParam
 from p5_interfaces.srv import AdmittanceShowStatus
 from p5_interfaces.srv import AdmittanceSetStatus
 
 
 class EEAdmittance(Node):
     def __init__(self):
-        super().__init__('ee_admittance')
+        super().__init__('p5_admittance_control')
         self.robot_name = self.declare_parameter('robot_name', 'alice')
         self.robot_name = self.get_parameter('robot_name').value
+        self.parameters = self.declare_parameter('parameters', 'default')
+        self.parameters = self.get_parameter('parameters').value
 
         # Create service servers
         self.active = True
         self.config = self.create_service(
             AdmittanceConfig,
-            self.robot_name +
-            '/admittance_config',
+            'p5_admittance_config',
             self.change_param)
         self.save = self.create_service(
             SaveAdmittanceParam,
-            self.robot_name +
-            '/save_admittance_param',
+            'p5_save_admittance_param',
             self.save_param)
         self.status = self.create_service(
             AdmittanceShowStatus,
-            self.robot_name +
-            '/admittance_show_staus',
+            'p5_admittance_show_staus',
             self.show_status)
         self.status_set = self.create_service(
             AdmittanceSetStatus,
-            self.robot_name +
-            '/admittance_set_staus',
+            'p5_admittance_set_state',
             self.set_status)
 
         # Load parameters
         try:
             with open('admittance_param.json', 'r') as f:
                 data = json.load(f)
-            self.M = np.diag(data['default']['M'])
-            self.D = np.diag(data['default']['D'])
-            self.K = np.diag(data['default']['K'])
-            self.alpha = data['default']['alpha']
+            self.M = np.diag(data[self.parameters]['M'])
+            self.D = np.diag(data[self.parameters]['D'])
+            self.K = np.diag(data[self.parameters]['K'])
+            self.alpha = data[self.parameters]['alpha']
         except BaseException:
             self.M = np.diag([1.5, 1.5, 1.5, 0.1, 0.1, 0.1])
             self.D = np.diag([20.0, 20.0, 20.0, 3.0, 3.0, 3.0])
@@ -82,16 +78,17 @@ class EEAdmittance(Node):
         self.x_goal = np.zeros(7)             # goal pose in quantariones (x, y, z, qx, qy, qz, qw)
         self.wrench = np.zeros(6)                  # latest measured wrench
         self.goal_received = False
-        # self.x_current = np.zeros(7)        # current EE pose (x, y, z, qx, qy, qz, qw)
 
-        self.robot_force = self.create_subscription(WrenchStamped, f'/{self.robot_name}_force_torque_sensor_broadcaster/wrench',
+        self.robot_force = self.create_subscription(WrenchStamped,
+                                                    f'/{self.robot_name}_force_torque_sensor_broadcaster/wrench',
                                                     self.wrench_cb, 10)
 
-        self.robot_goal = self.create_subscription(PoseStamped, f'/robot_pose_to_admittance_{self.robot_name}',
+        self.robot_goal = self.create_subscription(PoseStamped,
+                                                   'p5_robot_pose_to_admittance',
                                                    self.goal_cb, 10)
 
         self.current_goal_pub = self.create_publisher(PoseStamped,
-                                                      f'{self.robot_name}/servo_node/pose_target_cmds', 10)
+                                                      'p5_robot_pose_before_safety', 10)
 
         # Timer for control loop
         self.timer = self.create_timer(1 / self.update_rate, self.control_loop)
@@ -101,7 +98,7 @@ class EEAdmittance(Node):
         self.D = np.diag(request.d)
         self.K = np.diag(request.k)
         self.alpha = request.alpha
-        response.message = "parameter changed"
+        response.message = True
         return response
 
     def save_param(self, request, response):
@@ -120,12 +117,11 @@ class EEAdmittance(Node):
         with open("admittance_param.json", "w") as f:
             f.write(json_str)
 
-        response.message = f"Admittance parameter saved as {request.param_name}."
+        response.message = True
 
         return response
 
     def show_status(self, request, response):
-        request = request.show
         response.active = self.active
         response.robot_name = self.robot_name
         response.m_parameter = np.diag(self.M)
@@ -138,7 +134,7 @@ class EEAdmittance(Node):
     def set_status(self, request, response):
         self.active = request.active
         self.update_rate = request.update_rate
-        response.message = "status is set"
+        response.message = True
         return response
 
     def wrench_cb(self, msg: WrenchStamped):
@@ -245,7 +241,6 @@ class EEAdmittance(Node):
         pose_msg.pose.orientation.w = float(current_pose[6])
 
         self.current_goal_pub.publish(pose_msg)
-        self.get_logger().info(f"Goal position {pose_msg}")
 
 
 def main(args=None):

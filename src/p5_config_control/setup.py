@@ -10,6 +10,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/p5_config_control/launch', ['launch/launch_config_control_node.launch.py'])
     ],
     install_requires=['setuptools'],
     zip_safe=True,

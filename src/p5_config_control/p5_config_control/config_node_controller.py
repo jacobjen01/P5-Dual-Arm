@@ -18,7 +18,7 @@ from p5_interfaces.srv import MoveToPreDefPose
 
 class ControllerManager(Node):
     def __init__(self):
-        super().__init__('controller_manager_client')
+        super().__init__('p5_controller_manager_client')
         self.client = self.create_client(SwitchController, '/controller_manager/switch_controller')
         while not self.client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Waiting for service /controller_manager/switch_controller...')
@@ -59,11 +59,12 @@ def switch_to_position_control(robot_name):
 
     controller_manager.destroy_node()
 
+
 class JTCClient(rclpy.node.Node):
     """Small test client for the jtc."""
 
     def __init__(self):
-        super().__init__("move_to_pre_config_poses")
+        super().__init__("p5_move_to_pre_config_poses")
         self.home_service = self.create_service(
             MoveToPreDefPose,
             "/p5_move_to_pre_def_pose",
@@ -137,7 +138,7 @@ class JTCClient(rclpy.node.Node):
         self.goal_pose.points.append(point)
 
     def execute_trajectory(self):
-        self.get_logger().info(f"Executing trajectory")
+        self.get_logger().info("Executing trajectory")
         goal = FollowJointTrajectory.Goal()
         goal.trajectory = self.goal_pose
 

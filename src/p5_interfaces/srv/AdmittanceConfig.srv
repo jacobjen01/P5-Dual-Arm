@@ -3,5 +3,5 @@ float32[6] d
 float32[6] k
 float32 alpha
 ---
-string message
+bool message
 

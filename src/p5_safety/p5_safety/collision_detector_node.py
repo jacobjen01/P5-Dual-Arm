@@ -10,18 +10,30 @@ from geometry_msgs.msg import TransformStamped
 from std_msgs.msg import Bool
 
 
-
 class CollisionDetector(Node):
     def __init__(self):
-        super().__init__('collision_detector_node')
+        super().__init__('p5_collision_detector_node')
         self.WORLD_FRAME = "mir"
 
-        self.ROBOT_A_CYL_FRAME_DATA = [("alice_upper_arm_link_shifted", "alice_forearm_link_shifted", 0.05), ("alice_forearm_link", "alice_wrist_1_link_shifted", 0.05),
-                                                           ("alice_wrist_1_link", "alice_wrist_2_link", 0.01), ("alice_wrist_2_link", "alice_wrist_3_link", 0.01)]
-        self.ROBOT_B_CYL_FRAME_DATA = [("bob_upper_arm_link_shifted", "bob_forearm_link_shifted", 0.05), ("bob_forearm_link", "bob_wrist_1_link_shifted", 0.05),
-                                                           ("bob_wrist_1_link", "bob_wrist_2_link", 0.01), ("bob_wrist_2_link", "bob_wrist_3_link", 0.01)]
+        self.ROBOT_A_CYL_FRAME_DATA = [("alice_upper_arm_link_shifted",
+                                        "alice_forearm_link_shifted", 0.05),
+                                       ("alice_forearm_link",
+                                        "alice_wrist_1_link_shifted", 0.05),
+                                       ("alice_wrist_1_link",
+                                        "alice_wrist_2_link", 0.01),
+                                       ("alice_wrist_2_link",
+                                        "alice_wrist_3_link", 0.01)]
+        self.ROBOT_B_CYL_FRAME_DATA = [("bob_upper_arm_link_shifted",
+                                        "bob_forearm_link_shifted", 0.05),
+                                       ("bob_forearm_link",
+                                        "bob_wrist_1_link_shifted", 0.05),
+                                       ("bob_wrist_1_link",
+                                        "bob_wrist_2_link", 0.01),
+                                       ("bob_wrist_2_link",
+                                        "bob_wrist_3_link", 0.01)]
 
-        self.SAFETY_MARGIN = 0.1 # Safety margin in meters. the minimum distance allowed between the two robots.
+        # Safety margin in meters. the minimum distance allowed between the two robots.
+        self.SAFETY_MARGIN = 0.1
 
         self.error_handler = ErrorHandler(self)
 
@@ -38,11 +50,12 @@ class CollisionDetector(Node):
             depth=10
         )
 
-        self.protective_stop_publisher = self.create_publisher(Bool, "protective_stop", protective_stop_publisher_qos)
+        self.protective_stop_publisher = self.create_publisher(Bool,
+                                                               "p5_protective_stop",
+                                                               protective_stop_publisher_qos)
 
         self.timer_create_missing_tf_trees = self.create_timer(0.1, self.create_missing_joint_tf_trees)
         self.timer_check_collision = self.create_timer(0.1, self.detect_collision)
-
 
     """
     Helper function to quickly create tf trees
@@ -64,7 +77,6 @@ class CollisionDetector(Node):
 
         self.tf_broadcaster.sendTransform(t)
 
-
     """
     Create the transformation trees which can be used to create a vector from joint 1 to joint 2
     """
@@ -75,7 +87,6 @@ class CollisionDetector(Node):
         self._create_tf_tree("bob_upper_arm_link", "bob_upper_arm_link_shifted", [0.0, 0.0, 0.13, 0.0, 0.0, 0.0, 1.0])
         self._create_tf_tree("bob_forearm_link", "bob_forearm_link_shifted", [0.0, 0.0, 0.13, 0.0, 0.0, 0.0, 1.0])
         self._create_tf_tree("bob_wrist_1_link", "bob_wrist_1_link_shifted", [0.0, 0.0, -0.13, 0.0, 0.0, 0.0, 1.0])
-
 
     """
     Get the coordinate for one transformation tree in respect to another
@@ -96,7 +107,6 @@ class CollisionDetector(Node):
 
             return []
 
-
     """
     Get the position of all line points for one robot.
     """
@@ -109,12 +119,11 @@ class CollisionDetector(Node):
             pos_child = self._get_tf_tree_crd(self.WORLD_FRAME, child_name)
 
             if len(pos_parent) > 0 and len(pos_child) > 0:
-                 cylinder_desc.append([pos_parent, pos_child, radius])
+                cylinder_desc.append([pos_parent, pos_child, radius])
             else:
                 return []
 
         return cylinder_desc
-
 
     """
     Help function to see if in length
@@ -123,7 +132,6 @@ class CollisionDetector(Node):
         if dist < radius1 + radius2 + self.SAFETY_MARGIN:
             return True
         return False
-
 
     """
     Help function to check threshold
@@ -135,7 +143,6 @@ class CollisionDetector(Node):
                     return True
 
         return False
-
 
     """
     Detecting if two cylinders collides
@@ -157,8 +164,8 @@ class CollisionDetector(Node):
             return self._check_length(dist, cyl_1_radius, cyl_2_radius)
 
         # Lines are not parallel, calculating distance
-        dist = (np.abs(np.dot((cyl_2_begin_crd - cyl_1_begin_crd), np.cross(cyl_1_vec, cyl_2_vec))) /
-                np.linalg.norm(np.cross(cyl_1_vec, cyl_2_vec)))
+        dist = (np.abs(np.dot((cyl_2_begin_crd - cyl_1_begin_crd),
+                              np.cross(cyl_1_vec, cyl_2_vec))) / np.linalg.norm(np.cross(cyl_1_vec, cyl_2_vec)))
 
         # If the closest distance is greater than the minimum
         if not self._check_length(dist, cyl_1_radius, cyl_2_radius):
@@ -170,8 +177,8 @@ class CollisionDetector(Node):
         t1 = np.dot(np.cross(cyl_2_vec, n), (cyl_2_begin_crd - cyl_1_begin_crd)) / np.dot(n, n)
         t2 = np.dot(np.cross(cyl_1_vec, n), (cyl_2_begin_crd - cyl_1_begin_crd)) / np.dot(n, n)
 
-        closest_point_1 = t1*cyl_1_vec + cyl_1_begin_crd
-        closest_point_2 = t2*cyl_2_vec + cyl_2_begin_crd
+        closest_point_1 = t1 * cyl_1_vec + cyl_1_begin_crd
+        closest_point_2 = t2 * cyl_2_vec + cyl_2_begin_crd
 
         # If both points are inside
         if self._check_threshold(closest_point_1, cyl_1_crds) and self._check_threshold(closest_point_2, cyl_2_crds):
@@ -209,9 +216,8 @@ class CollisionDetector(Node):
 
         return False
 
-
     """
-    Check whether the system detects any collision. 
+    Check whether the system detects any collision.
     """
     def detect_collision(self):
         try:

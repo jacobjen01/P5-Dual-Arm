@@ -10,6 +10,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/p5_admittance_control/launch', ['launch/launch_admittance_node.launch.py'])
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -24,7 +25,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-                'admittance_node = p5_controller.admittance_node:main'
+                'admittance_node = p5_admittance_control.admittance_node:main'
         ],
     },
 )

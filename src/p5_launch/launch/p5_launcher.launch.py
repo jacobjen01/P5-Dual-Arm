@@ -1,26 +1,51 @@
+import os
 from launch import LaunchDescription
-from launch_ros.actions import Node
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from ament_index_python.packages import get_package_share_directory
+
 
 def generate_launch_description():
-    return LaunchDescription([
-        Node(
-            package='p5_controller',
-            executable='move_to_pre_config_poses',
-            name='move_to_pre_config_poses',
-            output='screen'
-        ),
-        Node(
-            package='p5_controller',
-            executable='admittance_node',
-            name='alice_admittance_node',
-            output='screen',
-            parameters=[{'robot_name': 'alice'}]
-        ),
-        Node(
-            package='p5_controller',
-            executable='admittance_node',
-            name='bob_admittance_node',
-            output='screen',
-            parameters=[{'robot_name': 'bob'}]
+    launch_safety = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('p5_safety'),
+                'launch',
+                'launch_safety.launch.py'
+            )
         )
+    )
+    launch_admittance_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('p5_admittance_control'),
+                'launch',
+                'launch_admittance_node.launch.py'
+            )
+        )
+    )
+    launch_config_controler_node = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('p5_config_control'),
+                'launch',
+                'launch_config_control_node.launch.py'
+            )
+        )
+    )
+    launch_relative_mover = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('p5_relative_mover'),
+                'launch',
+                'launch_relative_mover_node.launch.py'
+            )
+        )
+    )
+
+    return LaunchDescription([
+        launch_safety,
+        launch_admittance_node,
+        launch_config_controler_node,
+        launch_relative_mover,
     ])

@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'p5_relative_control'
+package_name = 'p5_relative_mover'
 
 setup(
     name=package_name,
@@ -10,6 +10,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/p5_relative_mover/launch', ['launch/launch_relative_mover_node.launch.py'])
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -24,7 +25,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'relative_mover_node = p5_relative_control.relative_mover_node:main'
+            'relative_mover_node = p5_relative_mover.relative_mover_node:main'
         ],
     },
 )

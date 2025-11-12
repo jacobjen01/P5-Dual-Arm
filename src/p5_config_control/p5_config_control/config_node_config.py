@@ -8,7 +8,7 @@ from p5_interfaces.srv import PoseConfig
 class PoseConfigListener(Node):
 
     def __init__(self):
-        super().__init__('pose_config_listener')
+        super().__init__('p5_pose_config_listener')
         self.srv = self.create_service(PoseConfig, '/p5_pose_config', self.change_pose)
 
     def change_pose(self, request, response):

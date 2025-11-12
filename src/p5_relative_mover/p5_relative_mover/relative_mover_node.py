@@ -6,20 +6,19 @@ from rclpy.node import Node
 from tf2_ros import TransformBroadcaster, Buffer, TransformListener
 from p5_safety._error_handling import ErrorHandler
 
-from geometry_msgs.msg import Pose, TransformStamped, PoseStamped
-from std_msgs.msg import String
-from p5_interfaces.srv import MoveToPose, SetLinearMovement, SetReferenceFrame
+from geometry_msgs.msg import TransformStamped, PoseStamped
+from p5_interfaces.srv import MoveToPose
 from p5_interfaces.msg import Tagvector
 
 
 class RelativeMover(Node):
     def __init__(self):
-        super().__init__('relative_mover_node')
+        super().__init__('p5_relative_mover_node')
 
-        self.MAX_VELOCITY = 0.2 # 200 mm/s
-        self.ACCELERATION = 0.1 # 500 mm/s^2
-        self.INTERP_ITERATIONS = 10 # number of times the point estimator should update.
-        self.UPDATE_RATE = 100 # Number of times the system shall update per second
+        self.MAX_VELOCITY = 0.2  # 200 mm/s
+        self.ACCELERATION = 0.1  # 500 mm/s^2
+        self.INTERP_ITERATIONS = 10  # number of times the point estimator should update.
+        self.UPDATE_RATE = 100  # Number of times the system shall update per second
 
         self.error_handler = ErrorHandler(self)
 
@@ -51,10 +50,16 @@ class RelativeMover(Node):
 
         self.i = 0
 
-        self.pose_publisher = self.create_publisher(PoseStamped, f"{self.robot_prefix}/servo_node/pose_target_cmds", 10) #f"{self.robot_prefix}_robot_pose_for_admittance_control"
-        self.velocity_subscriber = self.create_subscription(Tagvector, "/future_tag_vector", self.get_goal_velocity_callback, 10)
+        self.pose_publisher = self.create_publisher(PoseStamped,
+                                                    'p5_robot_pose_to_admittance', 10)
 
-        self.move_to_pose_service = self.create_service(MoveToPose, f'{self.robot_prefix}/move_to_pose', self.move_to_pose_callback)
+        self.velocity_subscriber = self.create_subscription(Tagvector,
+                                                            "p5_future_tag_vector",
+                                                            self.get_goal_velocity_callback, 10)
+
+        self.move_to_pose_service = self.create_service(MoveToPose,
+                                                        'p5_move_to_pose',
+                                                        self.move_to_pose_callback)
 
         self.timer_get_ee_pose_respect_to_base = self.create_timer(1 / self.UPDATE_RATE,
                                                                    self.get_ee_pose_respect_to_base)
@@ -102,7 +107,6 @@ class RelativeMover(Node):
                 self.goal_pose_velocity = np.array([vector.vx_unit, vector.vy_unit, vector.vz_unit])
                 self.get_logger().info(f"Received velocity {[vector.vx_unit, vector.vy_unit, vector.vz_unit]}")
 
-
     """
     Creates the goal frame which the robot should move to
     """
@@ -130,7 +134,7 @@ class RelativeMover(Node):
         except Exception as e:
             self.get_logger().error(f'Failed to create transform from {self.reference_frame}"/{self.robot_prefix}_goal_frame: {e}')
             self.error_handler.report_error(self.error_handler.info,
-                                            f'Failed to create transform from {self.reference_frame}"/{self.robot_prefix}_goal_frame: {e}')
+                                            f'Failed to create transform from{self.reference_frame}"/{self.robot_prefix}_goal_frame: {e}')
 
     """
     Helper function goal pose respect to base frame.
@@ -138,7 +142,8 @@ class RelativeMover(Node):
     def get_goal_pose_respect_to_base(self):
         try:
             now = rclpy.time.Time()
-            trans = self.tf_buffer.lookup_transform(f"{self.robot_prefix}_base_link", f"{self.robot_prefix}_goal_frame",
+            trans = self.tf_buffer.lookup_transform(f"{self.robot_prefix}_base_link",
+                                                    f"{self.robot_prefix}_goal_frame",
                                                     now)
 
             crd = trans.transform.translation
@@ -162,7 +167,6 @@ class RelativeMover(Node):
 
             crd = t.transform.translation
             quat = t.transform.rotation
-
 
             self.ee_pose_rel_base_frame = [crd.x, crd.y, crd.z, quat.x, quat.y, quat.z, quat.w]
 
@@ -200,7 +204,6 @@ class RelativeMover(Node):
             next_pose = self._linear_motion_predictor(self.goal_pose_rel_base_frame)
             self._publish_pose(next_pose)
 
-
         except Exception as e:
             self.get_logger().error(f'Error: {e}')
             self.error_handler.report_error(self.error_handler.error,
@@ -230,7 +233,7 @@ class RelativeMover(Node):
     """
     def _get_movement_time_to_goal(self, vec, vel):
         vel_proj = np.dot(vec, vel) / np.dot(vec, vec) * vec
-        v0 = np.linalg.norm(vel_proj) * (2 * np.heaviside(np.dot(vec, vel), 1) - 1) # Gets speed for robot
+        v0 = np.linalg.norm(vel_proj) * (2 * np.heaviside(np.dot(vec, vel), 1) - 1)  # Gets speed for robot
 
         v0 = self.robot_theoretical_velocity
 
@@ -242,18 +245,18 @@ class RelativeMover(Node):
         t2 = self.MAX_VELOCITY / self.ACCELERATION
         d2 = self.MAX_VELOCITY / 2 * t2
 
-        if d1+d2 < dist: #Trapetz velocity profile
+        if d1 + d2 < dist:  # Trapetz velocity profile
             dc = dist - (d1 + d2)
             tc = dc / self.MAX_VELOCITY
 
-            return t1+t2+tc
+            return t1 + t2 + tc
 
         vp = (np.sqrt(2) * np.sqrt(v0**2 + 2 * dist * self.ACCELERATION)) / 2
 
         t1 = (vp - v0) / self.ACCELERATION
         t2 = vp / self.ACCELERATION
 
-        return t1+t2
+        return t1 + t2
 
     """
     Publishes goal pose
@@ -290,8 +293,8 @@ class RelativeMover(Node):
         if dist < 0.01:
             return np.concatenate([crd_goal, quat_goal])
 
-        if dist <= 1/2 * vel**2 / self.ACCELERATION:
-            a = vel**2 / (2*dist) * -1
+        if dist <= 1 / 2 * vel**2 / self.ACCELERATION:
+            a = vel**2 / (2 * dist) * -1
             v = vel
 
         elif vel >= self.MAX_VELOCITY:
@@ -303,7 +306,7 @@ class RelativeMover(Node):
             a = self.ACCELERATION
 
         step = v * 1 / self.UPDATE_RATE + 1 / 2 * a * (1 / self.UPDATE_RATE) ** 2
-        frac = 1 - dist / np.linalg.norm(crd_goal-crd_ee_start)
+        frac = 1 - dist / np.linalg.norm(crd_goal - crd_ee_start)
 
         frac = float(np.clip(frac, 0.0, 1.0))
 
@@ -313,7 +316,7 @@ class RelativeMover(Node):
 
         new_crd = proj + crd_ee_start
 
-        self.robot_theoretical_velocity += a * (1/self.UPDATE_RATE)
+        self.robot_theoretical_velocity += a * (1 / self.UPDATE_RATE)
 
         quat_ee /= np.linalg.norm(quat_ee) + 1e-16
         quat_goal /= np.linalg.norm(quat_goal) + 1e-16

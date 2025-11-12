@@ -1,4 +1,3 @@
-bool show
 ---
 bool active
 string robot_name

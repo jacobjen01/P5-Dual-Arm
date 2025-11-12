@@ -10,6 +10,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/p5_safety/launch', ['launch/launch_safety.launch.py'])
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -24,6 +25,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            '_error_handling = p5_safety._error_handling:main',
             'collision_detector_node = p5_safety.collision_detector_node:main',
             'robot_protective_stop_node = p5_safety.robot_protective_stop_node:main'
         ],
