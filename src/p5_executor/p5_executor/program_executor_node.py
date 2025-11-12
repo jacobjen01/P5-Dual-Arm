@@ -6,9 +6,10 @@ import threading
 
 from rclpy.node import Node
 from tf2_ros import TransformBroadcaster, Buffer, TransformListener
+from ur_msgs import SetIO
 from p5_safety._error_handling import ErrorHandler
 
-from p5_interfaces.srv import LoadProgram, RunProgram, MoveToPose, MoveToPreDefPose
+from p5_interfaces.srv import LoadProgram, RunProgram, MoveToPose, MoveToPreDefPose, AdmittanceSetStatus
 
 
 class ProgramExecutor(Node):
@@ -151,10 +152,27 @@ class ProgramExecutor(Node):
             self._command_frame_availability(name, robot_name, args)
 
     def _command_grip(self, name, robot_name, args):
-        pass
+        state = args['state']
+
+        client, req = self._get_client_and_request(SetIO, f'{robot_name}_io_and_status_controller/set_io')
+
+        req.fun = 1
+        req.pin = 17
+        req.state = state
+
+        future = client.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
 
     def _command_admittance(self, name, robot_name, args):
-        pass
+        active = args['active']
+
+        client, req = self._get_client_and_request(AdmittanceSetStatus, f'{robot_name}/p5_admittance_set_state')
+
+        req.active = active
+        req.update_rate = 250
+
+        future = client.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
 
     def _get_client_and_request(self, datatype, service):
         client = self.create_client(datatype, service)

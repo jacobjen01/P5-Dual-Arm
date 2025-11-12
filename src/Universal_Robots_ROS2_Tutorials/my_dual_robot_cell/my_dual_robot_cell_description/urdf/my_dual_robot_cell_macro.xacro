@@ -44,13 +44,13 @@
         <geometry>
           <mesh filename="package://my_robot_cell_description/meshes/Low_Res_Dual_Robot_Base.dae"/>
         </geometry>
-        <origin rpy="1.570796 0 1.570796" xyz="0.25 -0.4 -1.0"/>
+        <origin rpy="1.570796 0 1.570796" xyz="-0.25 -0.1 -0.2"/>
       </visual>
       <collision>
         <geometry>
           <mesh filename="package://my_robot_cell_description/meshes/Low_Res_Dual_Robot_Base.dae"/>
         </geometry>
-		<origin rpy="1.570796 0 1.570796" xyz="0.25 -0.4 -1.0"/>
+		<origin rpy="1.570796 0 1.570796" xyz="-0.25 -0.1 -0.2"/>
       </collision>
     </link>
    
@@ -84,14 +84,14 @@
     <joint name="base_to_alice_robot_mount" type="fixed">
       <parent link="mir"/>
       <child link="alice_robot_mount"/>
-      <origin xyz="0 -0.33 -0.3" rpy="0 0 ${pi}" />
+	  <origin xyz="0 -0.33 -0.3" rpy="${-pi/4} 0 ${pi}" />
     </joint>
   
     <link name="bob_robot_mount"/>
     <joint name="base_to_bob_robot_mount" type="fixed">
       <parent link="mir"/>
       <child link="bob_robot_mount"/>
-      <origin xyz="0 0.33 -0.3" rpy="0 0 ${pi}" />
+	  <origin xyz="0 0.33 -0.3" rpy="${pi/4} 0 ${pi}" />
     </joint>
 
     <!--Creates the 1st Robot-->

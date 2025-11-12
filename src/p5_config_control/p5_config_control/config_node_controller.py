@@ -85,7 +85,6 @@ class JTCClient(rclpy.node.Node):
         self.goal_name = request.goal_name
         if self.robot_name != "alice" and self.robot_name != "bob":
             response.success = False
-            response.message = f"Robot name {self.robot_name} is not recognized"
             return response
 
         with open("config/pre_config_poses.json", "r") as f:
@@ -95,12 +94,10 @@ class JTCClient(rclpy.node.Node):
             TRAJECTORIES[self.goal_name]
         except BaseException:
             response.success = False
-            response.message = f"Goal name {self.goal_name} dose not exist"
             return response
         switch_to_joint_control(self.robot_name)
         self.handle_controller()
         response.success = True
-        response.message = "HOME"
         return response
 
     def handle_controller(self):

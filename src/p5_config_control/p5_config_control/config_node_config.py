@@ -3,7 +3,8 @@ import json
 import rclpy
 from rclpy.node import Node
 
-from p5_interfaces.srv import PoseConfig 
+from p5_interfaces.srv import PoseConfig
+
 
 class PoseConfigListener(Node):
 

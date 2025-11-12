@@ -230,7 +230,7 @@ class EEAdmittance(Node):
         # Publish current pose to the 'robot_pose_before_safety' topic.
         pose_msg = PoseStamped()
         pose_msg.header.stamp = self.get_clock().now().to_msg()
-        pose_msg.header.frame_id = 'world'
+        pose_msg.header.frame_id = self.goal_frame
 
         pose_msg.pose.position.x = float(current_pose[0])
         pose_msg.pose.position.y = float(current_pose[1])
