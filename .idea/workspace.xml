@@ -4,9 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bdec0d9e-6a6b-40e9-b5ac-25ef755822e9" name="Changes" comment="Updated node names">
+    <list default="true" id="bdec0d9e-6a6b-40e9-b5ac-25ef755822e9" name="Changes" comment="Updated small changes">
+      <change afterPath="$PROJECT_DIR$/src/p5_launch/launch/camera_calibration.launch.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/p5_safety/p5_safety/robot_protective_stop_node.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/p5_safety/p5_safety/robot_protective_stop_node.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -23,7 +23,7 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="main" />
+        <entry key="$PROJECT_DIR$" value="p5_executor" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -49,20 +49,20 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.est_move_time.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "p5__executor",
-    "last_opened_file_path": "C:/Users/rdk/OneDrive - Aalborg Universitet/AAU/5th semester/P5/code/P5-Dual-Arm/src/p5_interfaces/srv",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.est_move_time.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/rdk/OneDrive - Aalborg Universitet/AAU/5th semester/P5/code/P5-Dual-Arm/src/p5_interfaces/srv&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\rdk\OneDrive - Aalborg Universitet\AAU\5th semester\P5\code\P5-Dual-Arm\src\p5_interfaces\srv" />
@@ -96,6 +96,7 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.est_move_time" />
+        <item itemvalue="Python.est_move_time" />
       </list>
     </recent_temporary>
   </component>
@@ -124,6 +125,8 @@
       <workItem from="1762331883583" duration="8771000" />
       <workItem from="1762358020621" duration="1227000" />
       <workItem from="1762414781821" duration="5122000" />
+      <workItem from="1763546353479" duration="927000" />
+      <workItem from="1763547401800" duration="832000" />
     </task>
     <task id="LOCAL-00001" summary="Updating servo.yaml files and relative mover.">
       <option name="closed" value="true" />
@@ -258,7 +261,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="p5_executor" />
+                        <option value="main" />
                       </list>
                     </value>
                   </entry>
