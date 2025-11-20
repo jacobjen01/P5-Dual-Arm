@@ -2,6 +2,7 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 import math
 
+
 def generate_launch_description():
     return LaunchDescription([
         #
@@ -36,9 +37,9 @@ def generate_launch_description():
             executable='static_transform_publisher',
             name='static_tf_alice_base_link_to_camera_node',
             arguments=[
-                '0.292747', '-0.328202', '-0.0318875',  # x y z (meters)
-                '0', '0', '0',        # roll pitch yaw (radians)
-                'alice_base_link',          # parent frame
+                '0.04', '-0.30', '0.66',  # x y z (meters)
+                '-1.57079', '0', '0',        # roll pitch yaw (radians)
+                'mir',          # parent frame
                 'camera_link'         # child frame
             ]
         ),
@@ -48,9 +49,9 @@ def generate_launch_description():
             name='static_tf_alice_eef_link_to_at',
             arguments=[
                 '0.0', '0.0', '0.0485',  # x y z (meters)
-                '0', '0', '0',  # roll pitch yaw (radians)
-                'alice_base_link',  # parent frame
-                'camera_link'  # child frame
+                '3.14159265', '3.14159265', '1.57079',  # roll pitch yaw (radians)
+                'bob_tool0',  # parent frame
+                'april_tag_gp'  # child frame
             ]
         ),
 
