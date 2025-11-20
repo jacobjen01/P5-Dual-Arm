@@ -103,7 +103,7 @@ This saves the new joint angles to a json file. If the pose name already exists 
 If the pose dose not exists a new pose will be added to the file.
 
 ### Open and close end-effector
-To open and close the end-effector run the following service call.
+To open and close the end-effector run the following service call. Pin 16 is close when true and pin 17 is open when true. State is 0 or 1
 ```
 ros2 service call /bob_io_and_status_controller/set_io ur_msgs/srv/SetIO "{fun: 1, pin: 17, state: <state>}"
 ```
