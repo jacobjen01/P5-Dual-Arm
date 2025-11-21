@@ -78,6 +78,13 @@ class RelativeMover(Node):
     """
     def move_to_pose_callback(self, request, response):
         try:
+            msg = CommandState()
+            msg.robot_name = self.robot_prefix
+            msg.cmd = "r_move"
+            msg.status = False
+
+            self.command_state_publisher.publish(msg)
+
             self.linear_movement = request.linear
             self.linear_movement_use_tracking_velocity = request.use_tracking_velocity
             self.reference_frame = request.frame

@@ -14,6 +14,9 @@
           }, {
             "command": "r_move",
             "args": {"frame": "tag36h11:0", "linear": false, "use_tracking_velocity": false, "pose": [0.0, 0.15, 0.125, 0.70711, 0.70711, 0.0, 0.0]}
+          }, {
+            "command": "r_move",
+            "args": {"frame": "tag36h11:0", "linear": false, "use_tracking_velocity": false, "pose": [0.0, 0.046, 0.125, 0.70711, 0.70711, 0.0, 0.0]}
           }
         ]
       }
