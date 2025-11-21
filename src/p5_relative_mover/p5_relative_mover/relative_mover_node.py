@@ -140,7 +140,7 @@ class RelativeMover(Node):
 
             return response
 
-        except:
+        except Exception as e:
             self.get_logger().error(f'Error {e}')
             self.error_handler.report_error(self.error_handler.fatal,
                                             f'Error {e}')
