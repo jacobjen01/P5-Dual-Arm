@@ -6,17 +6,19 @@ import threading
 
 from rclpy.node import Node
 from tf2_ros import TransformBroadcaster, Buffer, TransformListener
-from ur_msgs import SetIO
+from ur_msgs.srv import SetIO
 from p5_safety._error_handling import ErrorHandler
+from moveit_msgs.srv import ServoCommandType
 
 from p5_interfaces.srv import LoadProgram, RunProgram, MoveToPose, MoveToPreDefPose, AdmittanceSetStatus
+from p5_interfaces.msg import CommandState
 
 
 class ProgramExecutor(Node):
     def __init__(self):
         super().__init__('program_executor')
 
-        self.JSON_PATH = ""
+        self.JSON_PATH = "config/programs.json"
         self.SLEEP_TIME = 0.005
         self.LOOKUP = {
             "c_move": self._command_c_move,
@@ -36,11 +38,18 @@ class ProgramExecutor(Node):
                                                         self.load_program_callback)
         self.run_program_service = self.create_service(RunProgram, f'program_executor/run_program',
                                                        self.run_program_callback)
+        self.velocity_subscriber = self.create_subscription(CommandState,
+                                                            "p5_command_state",
+                                                            self.get_command_state, 10)
 
         self.cache = {} # Stores temporary values which multiple threads require access to.
+        self.feedback = {}
         self.threads = []
 
         self.program = None
+
+    def get_command_state(self, msg):
+        self.feedback[f'{msg.robot_name}_{msg.cmd}'] = msg.status
 
     def load_program_callback(self, request, response):
         program_name = request.program_name
@@ -70,7 +79,9 @@ class ProgramExecutor(Node):
                 thread.start()
 
         else:
-            pass # evt. kode for at håndtere stop af program.
+            pass  # evt. kode for at håndtere stop af program.
+        response.resp = True
+        return response
 
     def _run_program_thread(self, thread_data):
         name = thread_data['name']
@@ -80,11 +91,9 @@ class ProgramExecutor(Node):
         for command in commands:
             command_name = command['command']
             args = command['args']
-
             if command_name in self.LOOKUP:
+                self.get_logger().info(f'Robot {robot_name}, command {command_name}, args {args}')
                 self.LOOKUP[command_name](name, robot_name, args) # Runs a function defined in self.LOOKUP.
-
-        pass
 
     def _command_c_move(self, name, robot_name, args):
 
@@ -97,8 +106,10 @@ class ProgramExecutor(Node):
 
         future = client.call_async(req)
         rclpy.spin_until_future_complete(self, future)
-
-        pass
+        while not f'{robot_name}_c_move' in self.feedback:
+            continue
+        while not self.feedback[f'{robot_name}_c_move']:
+            continue
 
     def _command_r_move(self, name, robot_name, args):
         pose = args['pose']
@@ -106,7 +117,18 @@ class ProgramExecutor(Node):
         use_tracking_velocity = args['use_tracking_velocity']
         frame = args['frame']
 
-        client, req = self._get_client_and_request(MoveToPose, f"{robot_name}/move_to_pose")
+        servo_node_command_client = self.create_client(ServoCommandType, f'{robot_name}/servo_node/switch_command_type')
+
+        while not servo_node_command_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+
+        cmd_type = ServoCommandType.Request()
+        cmd_type.command_type = 2
+
+        future = servo_node_command_client.call_async(cmd_type)
+        rclpy.spin_until_future_complete(self, future)
+
+        client, req = self._get_client_and_request(MoveToPose, f"{robot_name}/p5_move_to_pose")
 
         req.pose.position.x = pose[0]
         req.pose.position.y = pose[1]

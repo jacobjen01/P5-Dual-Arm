@@ -157,7 +157,7 @@ class FutureTagEstimator(Node):
                 self.tag_motion[tag_key] = {'direction_unit': direction_unit, 'direction': direction, 'speed': speed}
 
                 # Logger bevægelsesinfo
-                self.get_logger().info(f"Tag {tag_key} motion -> dir: ({direction[0]:.3f}, {direction[1]:.3f}, {direction[2]:.3f}), speed: {speed:.3f} m/s")
+                #self.get_logger().info(f"Tag {tag_key} motion -> dir: ({direction[0]:.3f}, {direction[1]:.3f}, {direction[2]:.3f}), speed: {speed:.3f} m/s")
 
                 # Opretter Tagvector besked for dette tag
                 vector = Tagvector()
@@ -177,7 +177,7 @@ class FutureTagEstimator(Node):
                 msg_out_array.vectors.append(vector)
             
             # Publiserer TagvectorArray beskeden
-            self.get_logger().info(f"Publishing future tag vectors for {len(msg_out_array.vectors)} tags")
+            #self.get_logger().info(f"Publishing future tag vectors for {len(msg_out_array.vectors)} tags")
             self.tagvector_publisher.publish(msg_out_array)
 
             #self.get_logger().info(f"Current tag poses: {self.tag_poses}")

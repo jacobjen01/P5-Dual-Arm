@@ -24,6 +24,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/AdmittanceSetStatus.srv"
   "srv/AdmittanceShowStatus.srv"
   "srv/GetStatus.srv"
+  "srv/LoadProgram.srv"
+  "srv/RunProgram.srv"
+  "msg/CommandState.msg"
 
   DEPENDENCIES geometry_msgs
   DEPENDENCIES std_msgs
