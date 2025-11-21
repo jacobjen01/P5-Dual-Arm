@@ -248,9 +248,9 @@ class RelativeMover(Node):
             msg.cmd = "r_move"
 
             if crd_diff < self.CRD_OFFSET and angle_diff < self.ANGLE_OFFSET:
-                msg.status = False
-            else:
                 msg.status = True
+            else:
+                msg.status = False
             self.command_state_publisher.publish(msg)
         except Exception as e:
             self.get_logger().error(f'Error at command state: {e}')

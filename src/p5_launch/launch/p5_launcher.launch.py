@@ -42,10 +42,20 @@ def generate_launch_description():
             )
         )
     )
+    launch_camera = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('p5_launch'),
+                'launch',
+                'launch_future_estimator.py'
+            )
+        )
+    )
 
     return LaunchDescription([
         launch_safety,
         launch_admittance_node,
         launch_config_controler_node,
         launch_relative_mover,
+        launch_camera,
     ])

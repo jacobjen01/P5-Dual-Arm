@@ -32,7 +32,7 @@ class EEAdmittance(Node):
         self.parameters = self.get_parameter('parameters').value
 
         # Create service servers
-        self.active = True
+        self.active = False
         self.config = self.create_service(
             AdmittanceConfig,
             'p5_admittance_config',

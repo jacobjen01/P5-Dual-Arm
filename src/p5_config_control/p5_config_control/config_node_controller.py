@@ -14,6 +14,7 @@ from control_msgs.msg import JointTolerance
 from rclpy.node import Node
 from controller_manager_msgs.srv import SwitchController
 from p5_interfaces.srv import MoveToPreDefPose
+from p5_interfaces.msg import CommandState
 
 
 class ControllerManager(Node):
@@ -70,17 +71,22 @@ class JTCClient(rclpy.node.Node):
             "/p5_move_to_pre_def_pose",
             self.handle_robot_move_to_service)
 
-        self.publish_status = self.create_publisher(Bool, '/p5_joint_mover_status', 10)
-        timer_period = 0.5  # seconds
+        self.publish_status = self.create_publisher(CommandState, 'p5_command_state', 10)
+        timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.get_status)
-        self.running = False
+        self.running = True
+        self.robot_name = 'alice'
 
     def get_status(self):
-        msg = Bool()
-        msg.data = self.running
+        msg = CommandState()
+        msg.robot_name = self.robot_name
+        msg.cmd = 'c_move'
+        msg.status = self.running
         self.publish_status.publish(msg)
 
     def handle_robot_move_to_service(self, request, response):
+        self.running = False
+        self.get_status()
         self.robot_name = request.robot_name
         self.goal_name = request.goal_name
         if self.robot_name != "alice" and self.robot_name != "bob":
@@ -115,7 +121,7 @@ class JTCClient(rclpy.node.Node):
         self.get_logger().info(f"Waiting for action server on {controller_name}")
         self._action_client.wait_for_server()
 
-        self.running = True
+        self.running = False
         self.parse_trajectories()
         self._send_goal_future = None
         self._get_result_future = None
@@ -165,7 +171,7 @@ class JTCClient(rclpy.node.Node):
         if status == GoalStatus.STATUS_SUCCEEDED:
             time.sleep(2)
             switch_to_position_control(self.robot_name)
-            self.running = False
+            self.running = True
         else:
             if result.error_code != FollowJointTrajectory.Result.SUCCESSFUL:
                 self.get_logger().error(
