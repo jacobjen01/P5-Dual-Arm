@@ -9,6 +9,9 @@
         "robot_name": "alice",
         "commands": [
           {
+            "command": "grip",
+            "args": {"action": false}
+          }, {
             "command": "c_move",
             "args": {"config_name": "ALICE_HOME"}
           }, {

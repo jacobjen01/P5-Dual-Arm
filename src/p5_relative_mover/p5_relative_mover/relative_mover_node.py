@@ -19,8 +19,8 @@ class RelativeMover(Node):
         self.ACCELERATION = 0.1  # 500 mm/s^2
         self.INTERP_ITERATIONS = 10  # number of times the point estimator should update.
         self.UPDATE_RATE = 100  # Number of times the system shall update per second
-        self.CRD_OFFSET = 0.002 # 2 mm off.
-        self.ANGLE_OFF = 0.002 # in radians.
+        self.CRD_OFFSET = 0.005 # 2 mm off.
+        self.ANGLE_OFFSET = 0.01 # in radians.
 
         self.error_handler = ErrorHandler(self)
 
@@ -60,7 +60,7 @@ class RelativeMover(Node):
         self.pose_publisher = self.create_publisher(PoseStamped,
                                                     'p5_robot_pose_to_admittance', 10)
 
-        self.command_state_publisher = self.create_publisher(CommandState, "p5_command_state", 10)
+        self.command_state_publisher = self.create_publisher(CommandState, "/p5_command_state", 10)
 
         self.velocity_subscriber = self.create_subscription(Tagvector,
                                                             "p5_future_tag_vector",
@@ -110,6 +110,12 @@ class RelativeMover(Node):
             return response
 
         except Exception as e:
+            msg = CommandState()
+            msg.robot_name = self.robot_prefix
+            msg.cmd = "r_move"
+            msg.status = True
+
+            self.command_state_publisher.publish(msg)
             self.get_logger().error(f'Failed to execute relative movement. Error {e}')
             self.error_handler.report_error(self.error_handler.fatal,
                                             f'Failed to execute relative movement. Error {e}')
@@ -235,12 +241,13 @@ class RelativeMover(Node):
             robot_pose = np.array(self.ee_pose_rel_base_frame)
             goal_pose = np.array(self.goal_pose_rel_base_frame)
 
-            robot_R = R.from_quat(robot_pose[3:6])
-            goal_R = R.from_quat(goal_pose[3:6])
+            robot_R = R.from_quat(robot_pose[3:7])
+            goal_R = R.from_quat(goal_pose[3:7])
 
             crd_diff = np.linalg.norm(robot_pose[0:3] - goal_pose[0:3])
             r_rel = robot_R.inv() * goal_R
             angle_diff = r_rel.magnitude()
+            self.get_logger().info(f'cord diff {crd_diff}, angle diff {angle_diff}')
 
             msg = CommandState()
 

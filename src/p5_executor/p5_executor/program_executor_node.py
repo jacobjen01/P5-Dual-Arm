@@ -38,7 +38,7 @@ class ProgramExecutor(Node):
                                                         self.load_program_callback)
         self.run_program_service = self.create_service(RunProgram, f'program_executor/run_program',
                                                        self.run_program_callback)
-        self.velocity_subscriber = self.create_subscription(CommandState,
+        self.command_state_subscriber = self.create_subscription(CommandState,
                                                             "p5_command_state",
                                                             self.get_command_state, 10)
 
@@ -128,6 +128,8 @@ class ProgramExecutor(Node):
         future = servo_node_command_client.call_async(cmd_type)
         rclpy.spin_until_future_complete(self, future)
 
+        self.feedback[f'{robot_name}_r_move']
+
         client, req = self._get_client_and_request(MoveToPose, f"{robot_name}/p5_move_to_pose")
 
         req.pose.position.x = pose[0]
@@ -144,8 +146,13 @@ class ProgramExecutor(Node):
 
         future = client.call_async(req)
         rclpy.spin_until_future_complete(self, future)
+        #time.sleep(2)
 
-        #MANGLER RESPONS SYSTEM.
+        self.get_logger().info(f'{self.feedback}')
+        while not f'{robot_name}_r_move' in self.feedback:
+            continue
+        while not self.feedback[f'{robot_name}_r_move']:
+            continue
 
     def _command_synchronize(self, name, robot_name, args):
         cache_id = f"sync_{args["sync_id"]}"
@@ -174,19 +181,32 @@ class ProgramExecutor(Node):
             self._command_frame_availability(name, robot_name, args)
 
     def _command_grip(self, name, robot_name, args):
-        state = args['state']
+        state = args['action']
 
-        client, req = self._get_client_and_request(SetIO, f'{robot_name}_io_and_status_controller/set_io')
+        client, req = self._get_client_and_request(SetIO, f'/{robot_name}_io_and_status_controller/set_io')
+
+        req.fun = 1
+        req.pin = 16
+        req.state = 0.0
+        if state:
+            req.state = 1.0
+
+        future = client.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+
+        client, req = self._get_client_and_request(SetIO, f'/{robot_name}_io_and_status_controller/set_io')
 
         req.fun = 1
         req.pin = 17
-        req.state = state
+        req.state = 1.0
+        if state:
+            req.state = 0.0
 
         future = client.call_async(req)
         rclpy.spin_until_future_complete(self, future)
 
     def _command_admittance(self, name, robot_name, args):
-        active = args['active']
+        active = args['action']
 
         client, req = self._get_client_and_request(AdmittanceSetStatus, f'{robot_name}/p5_admittance_set_state')
 
