@@ -8,7 +8,7 @@ from tf2_ros import TransformBroadcaster, Buffer, TransformListener
 from p5_safety._error_handling import ErrorHandler
 
 from geometry_msgs.msg import TransformStamped, PoseStamped
-from p5_interfaces.srv import MoveToPose
+from p5_interfaces.srv import MoveToPose, GetStatus
 from p5_interfaces.msg import Tagvector, CommandState
 
 
@@ -70,6 +70,10 @@ class RelativeMover(Node):
                                                         'p5_move_to_pose',
                                                         self.move_to_pose_callback)
 
+        self.move_to_pose_status_service = self.create_service(GetStatus,
+                                                        'p5_relative_mover_status',
+                                                        self.move_to_pose_status_callback)
+
         self.timer_get_ee_pose_respect_to_base = self.create_timer(1 / self.UPDATE_RATE,
                                                                    self.get_ee_pose_respect_to_base)
 
@@ -96,8 +100,6 @@ class RelativeMover(Node):
             self.ee_pose_rel_base_frame_start_frame = self.ee_pose_rel_base_frame.copy()
             self.ee_pose_rel_base_frame_theoretical = self.ee_pose_rel_base_frame.copy()
 
-            self.get_logger().info(f"Received request for pose {self.goal_pose_rel_target_frame}")
-
             self.timer_create_goal_frame = self.create_timer(1 / self.UPDATE_RATE, self.create_current_goal_frame)
             self.timer_get_goal_pose_respect_to_base = self.create_timer(1 / self.UPDATE_RATE,
                                                                          self.get_goal_pose_respect_to_base)
@@ -105,22 +107,8 @@ class RelativeMover(Node):
             if self.timer_move_robot is None:
                 self.timer_move_robot = self.create_timer(1/self.UPDATE_RATE, self.move_to_pose)
 
-            while not rclpy.is_shutdown():
-                robot_pose = np.array(self.ee_pose_rel_base_frame)
-                goal_pose = np.array(self.goal_pose_rel_base_frame)
-
-                robot_R = R.from_quat(robot_pose[3:7])
-                goal_R = R.from_quat(goal_pose[3:7])
-
-                crd_diff = np.linalg.norm(robot_pose[0:3] - goal_pose[0:3])
-                r_rel = robot_R.inv() * goal_R
-                angle_diff = r_rel.magnitude()
-                self.get_logger().info(f'cord diff {crd_diff}, angle diff {angle_diff}')
-
-                if crd_diff < self.CRD_OFFSET and angle_diff < self.ANGLE_OFFSET:
-                    break
-
             response.resp = True
+
             return response
 
         except Exception as e:
@@ -128,6 +116,35 @@ class RelativeMover(Node):
             self.error_handler.report_error(self.error_handler.fatal,
                                             f'Failed to execute relative movement. Error {e}')
             response.resp = False
+            return response
+
+    """
+    Callback function to get the status of the movement.
+    """
+    def move_to_pose_status_callback(self, request, response):
+        try:
+            robot_pose = np.array(self.ee_pose_rel_base_frame)
+            goal_pose = np.array(self.goal_pose_rel_base_frame)
+
+            robot_R = R.from_quat(robot_pose[3:7])
+            goal_R = R.from_quat(goal_pose[3:7])
+
+            crd_diff = np.linalg.norm(robot_pose[0:3] - goal_pose[0:3])
+            r_rel = robot_R.inv() * goal_R
+            angle_diff = r_rel.magnitude()
+
+            response.running = False
+
+            if crd_diff < self.CRD_OFFSET and angle_diff < self.ANGLE_OFFSET:
+                response.running = True
+
+            return response
+
+        except:
+            self.get_logger().error(f'Error {e}')
+            self.error_handler.report_error(self.error_handler.fatal,
+                                            f'Error {e}')
+            response.running = False
             return response
 
     """
