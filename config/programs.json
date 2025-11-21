@@ -1,14 +1,19 @@
-{'pick_lego': {
-  “description”: “Pick a lego brick while moving”,
-	“date”: “21-11-2025”,
-	“author”: “Rasmus”,
-	“threads”: [{
-    “name”: “alice_thread”,
-    “robot_name”: “alice”,
-    “commands”: [
+{
+  "pick_lego": {
+    "description": "Pick a lego brick while moving",
+    "date": "21-11-2025",
+    "author": "Rasmus",
+    "threads": [
       {
-    	  “command”: “c_move”,
-        “args”: {“config_name": "ALICE_HOME”},	
+        "name": "alice_thread",
+        "robot_name": "alice",
+        "commands": [
+          {
+            "command": "c_move",
+            "args": {"config_name": "ALICE_HOME"}
+          }
+        ]
       }
-    ]		
-  }]}}
+    ]
+  }
+}
