@@ -60,8 +60,6 @@ class RelativeMover(Node):
         self.pose_publisher = self.create_publisher(PoseStamped,
                                                     'p5_robot_pose_to_admittance', 10)
 
-        self.command_state_publisher = self.create_publisher(CommandState, "/p5_command_state", 10)
-
         self.velocity_subscriber = self.create_subscription(Tagvector,
                                                             "p5_future_tag_vector",
                                                             self.get_goal_velocity_callback, 10)
@@ -82,13 +80,6 @@ class RelativeMover(Node):
     """
     def move_to_pose_callback(self, request, response):
         try:
-            msg = CommandState()
-            msg.robot_name = self.robot_prefix
-            msg.cmd = "r_move"
-            msg.status = False
-
-            self.command_state_publisher.publish(msg)
-
             self.linear_movement = request.linear
             self.linear_movement_use_tracking_velocity = request.use_tracking_velocity
             self.reference_frame = request.frame
@@ -100,11 +91,10 @@ class RelativeMover(Node):
             self.ee_pose_rel_base_frame_start_frame = self.ee_pose_rel_base_frame.copy()
             self.ee_pose_rel_base_frame_theoretical = self.ee_pose_rel_base_frame.copy()
 
-            self.timer_create_goal_frame = self.create_timer(1 / self.UPDATE_RATE, self.create_current_goal_frame)
-            self.timer_get_goal_pose_respect_to_base = self.create_timer(1 / self.UPDATE_RATE,
-                                                                         self.get_goal_pose_respect_to_base)
-
             if self.timer_move_robot is None:
+                self.timer_create_goal_frame = self.create_timer(1 / self.UPDATE_RATE, self.create_current_goal_frame)
+                self.timer_get_goal_pose_respect_to_base = self.create_timer(1 / self.UPDATE_RATE,
+                                                                             self.get_goal_pose_respect_to_base)
                 self.timer_move_robot = self.create_timer(1/self.UPDATE_RATE, self.move_to_pose)
 
             response.resp = True
