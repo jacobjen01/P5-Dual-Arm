@@ -8,7 +8,7 @@ from p5_safety._error_handling import ErrorHandler
 
 from geometry_msgs.msg import TransformStamped, PoseStamped
 from p5_interfaces.srv import MoveToPose
-from p5_interfaces.msg import Tagvector
+from p5_interfaces.msg import Tagvector, CommandState
 
 
 class RelativeMover(Node):
@@ -19,6 +19,8 @@ class RelativeMover(Node):
         self.ACCELERATION = 0.1  # 500 mm/s^2
         self.INTERP_ITERATIONS = 10  # number of times the point estimator should update.
         self.UPDATE_RATE = 100  # Number of times the system shall update per second
+        self.CRD_OFFSET = 0.002 # 2 mm off.
+        self.ANGLE_OFF = 0.002 # in radians.
 
         self.error_handler = ErrorHandler(self)
 
@@ -37,6 +39,11 @@ class RelativeMover(Node):
         self.timer_create_goal_frame = None
         self.timer_get_goal_pose_respect_to_base = None
 
+        self.reached_frame = False
+
+        self.timer_move_robot = None
+        self.timer_command_state = None
+
         self.goal_pose_rel_target_frame = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
         self.goal_pose_rel_base_frame = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
         self.ee_pose_rel_base_frame = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
@@ -52,6 +59,8 @@ class RelativeMover(Node):
 
         self.pose_publisher = self.create_publisher(PoseStamped,
                                                     'p5_robot_pose_to_admittance', 10)
+
+        self.command_state_publisher = self.create_publisher(CommandState, "p5_command_state", 10)
 
         self.velocity_subscriber = self.create_subscription(Tagvector,
                                                             "p5_future_tag_vector",
@@ -86,7 +95,9 @@ class RelativeMover(Node):
             self.timer_get_goal_pose_respect_to_base = self.create_timer(1 / self.UPDATE_RATE,
                                                                          self.get_goal_pose_respect_to_base)
 
-            self.timer_move_robot = self.create_timer(1/self.UPDATE_RATE, self.move_to_pose)
+            if self.timer_move_robot is None:
+                self.timer_move_robot = self.create_timer(1/self.UPDATE_RATE, self.move_to_pose)
+                self.timer_command_state = self.create_timer(1/10, self.command_state)
 
             response.resp = True
             return response
@@ -208,6 +219,36 @@ class RelativeMover(Node):
             self.get_logger().error(f'Error: {e}')
             self.error_handler.report_error(self.error_handler.error,
                                             f'Error: {e}')
+
+    """
+    Command state publish function
+    """
+    def command_state(self):
+        try:
+            robot_pose = np.array(self.ee_pose_rel_base_frame)
+            goal_pose = np.array(self.goal_pose_rel_base_frame)
+
+            robot_R = R.from_quat(robot_pose[3:6])
+            goal_R = R.from_quat(goal_pose[3:6])
+
+            crd_diff = np.linalg.norm(robot_pose[0:3] - goal_pose[0:3])
+            r_rel = robot_R.inv() * goal_R
+            angle_diff = r_rel.magnitude()
+
+            msg = CommandState()
+
+            msg.robot_name = self.robot_prefix
+            msg.cmd = "r_move"
+
+            if crd_diff < self.CRD_OFFSET and angle_diff < self.ANGLE_OFFSET:
+                msg.status = False
+            else:
+                msg.status = True
+            self.command_state_publisher.publish(msg)
+        except Exception as e:
+            self.get_logger().error(f'Error at command state: {e}')
+            self.error_handler.report_error(self.error_handler.error,
+                                            f'Error at command state: {e}')
 
     """
     Helper function to get estimated goal pose in respect to base frame of robot, for robot to move to
