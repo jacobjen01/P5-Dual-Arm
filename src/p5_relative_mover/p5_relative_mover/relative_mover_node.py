@@ -1,5 +1,6 @@
 import rclpy
 import numpy as np
+import threading
 from scipy.spatial.transform import Rotation as R, Slerp
 
 from rclpy.node import Node
@@ -42,7 +43,6 @@ class RelativeMover(Node):
         self.reached_frame = False
 
         self.timer_move_robot = None
-        self.timer_command_state = None
 
         self.goal_pose_rel_target_frame = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
         self.goal_pose_rel_base_frame = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
@@ -104,18 +104,26 @@ class RelativeMover(Node):
 
             if self.timer_move_robot is None:
                 self.timer_move_robot = self.create_timer(1/self.UPDATE_RATE, self.move_to_pose)
-                self.timer_command_state = self.create_timer(1/10, self.command_state)
+
+            while not rclpy.is_shutdown():
+                robot_pose = np.array(self.ee_pose_rel_base_frame)
+                goal_pose = np.array(self.goal_pose_rel_base_frame)
+
+                robot_R = R.from_quat(robot_pose[3:7])
+                goal_R = R.from_quat(goal_pose[3:7])
+
+                crd_diff = np.linalg.norm(robot_pose[0:3] - goal_pose[0:3])
+                r_rel = robot_R.inv() * goal_R
+                angle_diff = r_rel.magnitude()
+                self.get_logger().info(f'cord diff {crd_diff}, angle diff {angle_diff}')
+
+                if crd_diff < self.CRD_OFFSET and angle_diff < self.ANGLE_OFFSET:
+                    break
 
             response.resp = True
             return response
 
         except Exception as e:
-            msg = CommandState()
-            msg.robot_name = self.robot_prefix
-            msg.cmd = "r_move"
-            msg.status = True
-
-            self.command_state_publisher.publish(msg)
             self.get_logger().error(f'Failed to execute relative movement. Error {e}')
             self.error_handler.report_error(self.error_handler.fatal,
                                             f'Failed to execute relative movement. Error {e}')
@@ -232,37 +240,6 @@ class RelativeMover(Node):
             self.get_logger().error(f'Error: {e}')
             self.error_handler.report_error(self.error_handler.error,
                                             f'Error: {e}')
-
-    """
-    Command state publish function
-    """
-    def command_state(self):
-        try:
-            robot_pose = np.array(self.ee_pose_rel_base_frame)
-            goal_pose = np.array(self.goal_pose_rel_base_frame)
-
-            robot_R = R.from_quat(robot_pose[3:7])
-            goal_R = R.from_quat(goal_pose[3:7])
-
-            crd_diff = np.linalg.norm(robot_pose[0:3] - goal_pose[0:3])
-            r_rel = robot_R.inv() * goal_R
-            angle_diff = r_rel.magnitude()
-            self.get_logger().info(f'cord diff {crd_diff}, angle diff {angle_diff}')
-
-            msg = CommandState()
-
-            msg.robot_name = self.robot_prefix
-            msg.cmd = "r_move"
-
-            if crd_diff < self.CRD_OFFSET and angle_diff < self.ANGLE_OFFSET:
-                msg.status = True
-            else:
-                msg.status = False
-            self.command_state_publisher.publish(msg)
-        except Exception as e:
-            self.get_logger().error(f'Error at command state: {e}')
-            self.error_handler.report_error(self.error_handler.error,
-                                            f'Error at command state: {e}')
 
     """
     Helper function to get estimated goal pose in respect to base frame of robot, for robot to move to
