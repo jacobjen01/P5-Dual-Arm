@@ -26,7 +26,7 @@ def generate_launch_description():
                 ('camera_info', '/camera/camera/color/camera_info'),
             ],
             parameters=[{
-                'size': 0.1
+                'size': 0.077
             }]
         ),
         #
@@ -36,19 +36,20 @@ def generate_launch_description():
             package='p5_perception',
             namespace='perception',
             executable='future_tag_estimator',
-            name='future_tag_estimator'
+            name='future_tag_estimator_node'
         ),
 
         # Static transform from mir -> camera_link
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',
-            name='static_tf_mir_to_camera',
+            name='static_tf_alice_base_link_to_camera_node',
             arguments=[
-                '0.0', '0.0', '0.0',  # x y z (meters)
-                '0', '0', '0',        # roll pitch yaw (radians)
+                '0.04', '-0.30', '0.66',  # x y z (meters)
+                '-1.57079', '0', '0',        # roll pitch yaw (radians)
                 'mir',          # parent frame
                 'camera_link'         # child frame
             ]
         ),
     ])
+

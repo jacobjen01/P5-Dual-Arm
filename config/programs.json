@@ -1,0 +1,34 @@
+{
+  "pick_lego": {
+    "description": "Pick a lego brick while moving",
+    "date": "21-11-2025",
+    "author": "Rasmus",
+    "threads": [
+      {
+        "name": "alice_thread",
+        "robot_name": "alice",
+        "commands": [
+          {
+            "command": "grip",
+            "args": {"action": false}
+          }, {
+            "command": "c_move",
+            "args": {"config_name": "ALICE_HOME"}
+          }, {
+            "command": "r_move",
+            "args": {"frame": "tag36h11:0", "linear": false, "use_tracking_velocity": false, "pose": [0.0, 0.15, 0.125, 0.70711, 0.70711, 0.0, 0.0]}
+          }, {
+            "command": "r_move",
+            "args": {"frame": "tag36h11:0", "linear": false, "use_tracking_velocity": false, "pose": [0.0, 0.046, 0.125, 0.70711, 0.70711, 0.0, 0.0]}
+          }, {
+            "command": "grip",
+            "args": {"action": true}
+          }, {
+            "command": "r_move",
+            "args": {"frame": "tag36h11:0", "linear": false, "use_tracking_velocity": false, "pose": [0.0, 0.15, 0.125, 0.70711, 0.70711, 0.0, 0.0]}
+          }
+        ]
+      }
+    ]
+  }
+}

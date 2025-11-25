@@ -1,0 +1,3 @@
+string robot_name
+string cmd
+bool status

@@ -1,0 +1,5 @@
+bool active
+int32 update_rate
+---
+bool message
+

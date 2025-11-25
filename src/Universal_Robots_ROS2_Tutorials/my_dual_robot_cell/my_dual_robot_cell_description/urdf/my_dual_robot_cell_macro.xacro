@@ -44,54 +44,54 @@
         <geometry>
           <mesh filename="package://my_robot_cell_description/meshes/Low_Res_Dual_Robot_Base.dae"/>
         </geometry>
-        <origin rpy="1.570796 0 1.570796" xyz="0.25 -0.4 -1.0"/>
+        <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       </visual>
       <collision>
         <geometry>
           <mesh filename="package://my_robot_cell_description/meshes/Low_Res_Dual_Robot_Base.dae"/>
         </geometry>
-		<origin rpy="1.570796 0 1.570796" xyz="0.25 -0.4 -1.0"/>
+		<origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       </collision>
     </link>
-   
+
     <material name="white">
       <color rgba="1 1 1 1"/>
     </material>
-	
-    <joint name="table" type="fixed">
-      <xacro:insert_block name="origin" />
-      <parent link="world" />
-      <child link="table" />
-    </joint>
 
-    <link name="table">
-      <visual>
-        <geometry>
-          <mesh filename="package://my_robot_cell_description/meshes/fzi_table.dae"/>
-        </geometry>
-        <origin rpy="0 0 0" xyz="0.75 0.5 -1"/>
-      </visual>
-      <collision>
-        <geometry>
-          <mesh filename="package://my_robot_cell_description/meshes/fzi_table.dae"/>
-        </geometry>
-        <origin rpy="0 0 0" xyz="0.75 0.5 -1"/>
-      </collision>
-    </link>
+	<!--<joint name="table" type="fixed">-->
+	<!--<xacro:insert_block name="origin" />-->
+	<!--<parent link="world" />-->
+	<!--<child link="table" />-->
+	<!--</joint>-->
+
+	<!--<link name="table">-->
+	<!--<visual>-->
+	<!--<geometry>-->
+	<!--<mesh filename="package://my_robot_cell_description/meshes/fzi_table.dae"/>-->
+	<!--</geometry>-->
+	<!--<origin rpy="0 0 0" xyz="0.75 0.5 -1"/>-->
+	<!--</visual>-->
+	<!--<collision>-->
+	<!--<geometry>-->
+	<!--<mesh filename="package://my_robot_cell_description/meshes/fzi_table.dae"/>-->
+	<!--</geometry>-->
+	<!--<origin rpy="0 0 0" xyz="0.75 0.5 -1"/>-->
+	<!--</collision>-->
+	<!--</link>-->
 
     <!--Creates the mounts to attach the robots to the table-->
     <link name="alice_robot_mount"/>
     <joint name="base_to_alice_robot_mount" type="fixed">
       <parent link="mir"/>
       <child link="alice_robot_mount"/>
-      <origin xyz="0 -0.33 -0.3" rpy="0 0 ${pi}" />
+	  <origin xyz="-0.2339 0.0083 0.7755" rpy="-0.6319 0.5207 2.1817" />
     </joint>
-  
+
     <link name="bob_robot_mount"/>
     <joint name="base_to_bob_robot_mount" type="fixed">
       <parent link="mir"/>
       <child link="bob_robot_mount"/>
-      <origin xyz="0 0.33 -0.3" rpy="0 0 ${pi}" />
+	  <origin xyz="0.1919 0.0040 0.7850" rpy="-0.5832 0.5376 -0.9286" />
     </joint>
 
     <!--Creates the 1st Robot-->
@@ -106,7 +106,7 @@
     >
       <origin xyz="0 0 0" rpy="0 0 0" />
     </xacro:ur_robot>
-  
+
     <!--Creates the 2nd Robot-->
     <xacro:ur_robot
       name="bob"

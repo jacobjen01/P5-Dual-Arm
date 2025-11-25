@@ -13,13 +13,25 @@ find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Error.msg"
   "msg/Tagvector.msg"
+  "msg/TagvectorArray.msg"
   "srv/MoveToPose.srv"
   "srv/SetLinearMovement.srv"
   "srv/SetReferenceFrame.srv"
-  "srv/RobotConfigurations.srv"
+  "srv/MoveToPreDefPose.srv"
   "srv/PoseConfig.srv"
+<<<<<<< HEAD
   "srv/GetMissions.srv"
   "srv/PostMissions.srv"
+=======
+  "srv/AdmittanceConfig.srv"
+  "srv/SaveAdmittanceParam.srv"
+  "srv/AdmittanceSetStatus.srv"
+  "srv/AdmittanceShowStatus.srv"
+  "srv/GetStatus.srv"
+  "srv/LoadProgram.srv"
+  "srv/RunProgram.srv"
+  "msg/CommandState.msg"
+>>>>>>> cb50e4f02f67e817fbc09cf9e1259343a4609a4d
 
   DEPENDENCIES geometry_msgs
   DEPENDENCIES std_msgs

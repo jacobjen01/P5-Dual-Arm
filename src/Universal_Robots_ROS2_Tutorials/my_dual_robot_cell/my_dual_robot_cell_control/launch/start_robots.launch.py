@@ -229,12 +229,11 @@ def launch_setup():
         "alice_speed_scaling_state_broadcaster",
         "bob_speed_scaling_state_broadcaster",
         "alice_force_torque_sensor_broadcaster",
-        "bob_force_torque_sensor_broadcaster",
-        "alice_forward_position_controller",
-        "bob_forward_position_controller",
+        "bob_force_torque_sensor_broadcaster"
     ]
     controllers_inactive = [
-
+        "alice_forward_position_controller",
+        "bob_forward_position_controller"
     ]
 
     controller_spawners = [controller_spawner(controllers_active)] + [
@@ -304,12 +303,12 @@ def launch_setup():
     )
 
     # Include robot_commands_listener.launch.py
-    robot_listener_launch = IncludeLaunchDescription(
+    p5_launcher = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
-                get_package_share_directory('p5_controller'),
+                get_package_share_directory('p5_launch'),
                 'launch',
-                'robot_commands_listener.launch.py'
+                'p5_launcher.launch.py'
             )
         )
     )
@@ -331,7 +330,7 @@ def launch_setup():
         bob_initial_joint_controller_spawner_stopped,
         alice_initial_joint_controller_spawner_started,
         bob_initial_joint_controller_spawner_started,
-        #robot_listener_launch,
+        p5_launcher,
     ] + controller_spawners
 
     return nodes_to_start

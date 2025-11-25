@@ -1,0 +1,47 @@
+Robot:
+
+- Translation: [0.327, -0.447, -0.179]
+- Rotation: in Quaternion [-0.320, 0.946, -0.043, 0.014]
+
+- Translation: [0.443, -0.513, -0.165]
+- Rotation: in Quaternion [-0.335, 0.941, -0.042, 0.015]	
+
+- Translation: [0.576, -0.639, -0.084]
+- Rotation: in Quaternion [-0.484, 0.856, -0.029, 0.178]
+
+- Translation: [0.353, -0.508, -0.223]
+- Rotation: in Quaternion [-0.325, 0.756, 0.260, 0.505]
+
+- Translation: [0.416, -0.439, -0.175]
+- Rotation: in Quaternion [0.066, -0.300, 0.432, 0.848]
+
+- Translation: [0.570, -0.508, -0.108]
+- Rotation: in Quaternion [0.348, -0.575, 0.418, 0.612]
+
+- Translation: [0.328, -0.450, -0.233]
+- Rotation: in Quaternion [-0.361, 0.858, 0.270, 0.248]
+
+
+Camera:
+- Translation: [0.260, -0.069, 0.010]
+- Rotation: in Quaternion [0.271, -0.711, -0.268, 0.590]
+
+- Translation: [0.392, -0.035, -0.007]
+- Rotation: in Quaternion [0.274, -0.703, -0.268, 0.599]
+
+- Translation: [0.584, 0.041, 0.034]
+- Rotation: in Quaternion [0.452, -0.538, -0.285, 0.652]
+
+- Translation: [0.311, -0.051, -0.017]
+- Rotation: in Quaternion [-0.552, 0.356, 0.636, -0.405]
+
+- Translation: [0.310, 0.034, 0.064]
+- Rotation: in Quaternion [-0.496, -0.523, 0.574, 0.389]
+
+- Translation: [0.497, 0.079, 0.051]
+- Rotation: in Quaternion [-0.159, -0.605, 0.420, 0.657]
+
+- Translation: [0.238, -0.070, -0.043]
+- Rotation: in Quaternion [0.368, -0.459, -0.574, 0.570]
+
+

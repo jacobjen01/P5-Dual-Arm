@@ -5,6 +5,7 @@ import requests
 from urllib.parse import urljoin
 from p5_interfaces.srv import GetMissions, PostMissions
 
+
 class MirRestNode(Node):
     headers = {
         "accept": "application/json",
@@ -13,8 +14,11 @@ class MirRestNode(Node):
         "Content-Type": "application/json"
     }
 
+<<<<<<< HEAD
     BASE_URL = "http://192.168.12.20/api/v2.0.0/"
 
+=======
+>>>>>>> cb50e4f02f67e817fbc09cf9e1259343a4609a4d
     def __init__(self):
         super().__init__('mir_rest_node')
         # services
@@ -22,8 +26,16 @@ class MirRestNode(Node):
         self.post_mission_srv = self.create_service(PostMissions, 'post_mission', self.handle_post_mission)
         self.get_logger().info("mir_rest_node ready: services -> /get_missions, /post_mission")
 
+<<<<<<< HEAD
         # Run interactive mission selection automatically
         self.select_and_post_mission()
+=======
+        self.timer = self.create_timer(3.0, self.get_system_info)
+
+    def get_system_info(self):
+        # Retrieve the information about the system. It contains different information like serial numbers of hardware components, MAC addresses of network cards, etc…
+        url = "http://192.168.12.20/api/v2.0.0/system/info"
+>>>>>>> cb50e4f02f67e817fbc09cf9e1259343a4609a4d
 
     def handle_get_missions(self, request, response):
         url = urljoin(self.BASE_URL, 'missions')
@@ -121,6 +133,7 @@ class MirRestNode(Node):
         else:
             msg = future.result().message if future.result() else "No response"
             self.get_logger().error(f"Failed to queue '{selected_name}': {msg}")
+
 
 
 def main(args=None):

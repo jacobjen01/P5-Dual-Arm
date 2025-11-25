@@ -4,16 +4,30 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bdec0d9e-6a6b-40e9-b5ac-25ef755822e9" name="Changes" comment="Updating servo.yaml files and relative mover.">
+    <list default="true" id="bdec0d9e-6a6b-40e9-b5ac-25ef755822e9" name="Changes" comment="Lets hope this work - relative mover">
+      <change afterPath="$PROJECT_DIR$/src/p5_interfaces/srv/StopRelativeMover.srv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.name" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/p5_controller/p5_controller/relative_mover_node.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/p5_controller/p5_controller/relative_mover_node.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/p5_relative_mover/p5_relative_mover/relative_mover_node.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/p5_relative_mover/p5_relative_mover/relative_mover_node.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="p5_executor" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -37,19 +51,25 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.est_move_time.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.est_move_time.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/rdk/OneDrive - Aalborg Universitet/AAU/5th semester/P5/code/P5-Dual-Arm/src/p5_interfaces/srv&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\rdk\OneDrive - Aalborg Universitet\AAU\5th semester\P5\code\P5-Dual-Arm\src\p5_interfaces\srv" />
+    </key>
+  </component>
   <component name="RunManager">
     <configuration name="est_move_time" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="P5-Dual-Arm" />
@@ -78,6 +98,7 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.est_move_time" />
+        <item itemvalue="Python.est_move_time" />
       </list>
     </recent_temporary>
   </component>
@@ -101,7 +122,18 @@
       <workItem from="1761559272094" duration="314000" />
       <workItem from="1761560074709" duration="1415000" />
       <workItem from="1761563810483" duration="5763000" />
-      <workItem from="1761591450672" duration="1722000" />
+      <workItem from="1761591450672" duration="2576000" />
+      <workItem from="1762284404974" duration="2245000" />
+      <workItem from="1762331883583" duration="8771000" />
+      <workItem from="1762358020621" duration="1227000" />
+      <workItem from="1762414781821" duration="5122000" />
+      <workItem from="1763546353479" duration="927000" />
+      <workItem from="1763547401800" duration="940000" />
+      <workItem from="1763555042960" duration="2505000" />
+      <workItem from="1763736855660" duration="2865000" />
+      <workItem from="1763740735661" duration="4144000" />
+      <workItem from="1763748278720" duration="6340000" />
+      <workItem from="1764057269954" duration="496000" />
     </task>
     <task id="LOCAL-00001" summary="Updating servo.yaml files and relative mover.">
       <option name="closed" value="true" />
@@ -119,18 +151,214 @@
       <option name="project" value="LOCAL" />
       <updated>1761568377265</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Small but big update to relative_mover,">
+      <option name="closed" value="true" />
+      <created>1761593425412</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1761593425412</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Small but big update to relative_mover,">
+      <option name="closed" value="true" />
+      <created>1762284453797</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1762284453797</updated>
+    </task>
+    <task id="LOCAL-00005" summary="P5_executor package added">
+      <option name="closed" value="true" />
+      <created>1762332000288</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1762332000288</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Program executor test push to branch.">
+      <option name="closed" value="true" />
+      <created>1762332250417</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1762332250417</updated>
+    </task>
+    <task id="LOCAL-00007" summary="update to relative mover">
+      <option name="closed" value="true" />
+      <created>1762333218738</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1762333218738</updated>
+    </task>
+    <task id="LOCAL-00008" summary="update to relative mover">
+      <option name="closed" value="true" />
+      <created>1762358533196</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1762358533196</updated>
+    </task>
+    <task id="LOCAL-00009" summary="update to relative mover">
+      <option name="closed" value="true" />
+      <created>1762358573359</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1762358573359</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Updated relative mover">
+      <option name="closed" value="true" />
+      <created>1762358911580</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1762358911580</updated>
+    </task>
+    <task id="LOCAL-00011" summary="Program loader push without json file location defined">
+      <option name="closed" value="true" />
+      <created>1762417902265</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1762417902265</updated>
+    </task>
+    <task id="LOCAL-00012" summary="Updated node names">
+      <option name="closed" value="true" />
+      <created>1762419181464</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1762419181464</updated>
+    </task>
+    <task id="LOCAL-00013" summary="custom launch for camera calibration">
+      <option name="closed" value="true" />
+      <created>1763548450126</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1763548450126</updated>
+    </task>
+    <task id="LOCAL-00014" summary="Updating urdf and model">
+      <option name="closed" value="true" />
+      <created>1763555791997</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1763555791997</updated>
+    </task>
+    <task id="LOCAL-00015" summary="Updating urdf and model 2">
+      <option name="closed" value="true" />
+      <created>1763555993043</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1763555993043</updated>
+    </task>
+    <task id="LOCAL-00016" summary="Updating urdf and model 3">
+      <option name="closed" value="true" />
+      <created>1763556181828</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1763556181828</updated>
+    </task>
+    <task id="LOCAL-00017" summary="Simple json program for only alice home :D">
+      <option name="closed" value="true" />
+      <created>1763737247894</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1763737247894</updated>
+    </task>
+    <task id="LOCAL-00018" summary="Updated relative mover and program">
+      <option name="closed" value="true" />
+      <created>1763743493580</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1763743493580</updated>
+    </task>
+    <task id="LOCAL-00019" summary="Updated relative mover and program">
+      <option name="closed" value="true" />
+      <created>1763744321481</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1763744321481</updated>
+    </task>
+    <task id="LOCAL-00020" summary="New program">
+      <option name="closed" value="true" />
+      <created>1763748497654</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1763748497654</updated>
+    </task>
+    <task id="LOCAL-00021" summary="Lets hope this work - relative mover">
+      <option name="closed" value="true" />
+      <created>1763752867816</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1763752867816</updated>
+    </task>
+    <task id="LOCAL-00022" summary="Lets hope this work - relative mover">
+      <option name="closed" value="true" />
+      <created>1763754397866</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1763754397866</updated>
+    </task>
+    <task id="LOCAL-00023" summary="Lets hope this work - relative mover">
+      <option name="closed" value="true" />
+      <created>1763754430996</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1763754430996</updated>
+    </task>
+    <task id="LOCAL-00024" summary="Lets hope this work - relative mover">
+      <option name="closed" value="true" />
+      <created>1763754945709</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1763754945709</updated>
+    </task>
+    <option name="localTasksCounter" value="25" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
+    <option name="RECENT_FILTERS">
+      <map>
+        <entry key="Branch">
+          <value>
+            <list>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="main" />
+                </option>
+              </RecentGroup>
+            </list>
+          </value>
+        </entry>
+      </map>
+    </option>
     <option name="TAB_STATES">
       <map>
         <entry key="MAIN">
           <value>
             <State>
+              <option name="CUSTOM_BOOLEAN_PROPERTIES">
+                <map>
+                  <entry key="Show.Git.Branches" value="true" />
+                </map>
+              </option>
               <option name="FILTERS">
                 <map>
                   <entry key="branch">
@@ -150,9 +378,28 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Updating servo.yaml files and relative mover." />
-    <option name="LAST_COMMIT_MESSAGE" value="Updating servo.yaml files and relative mover." />
+    <MESSAGE value="Merge branch 'main' of github.com:jacobjen01/P5-Dual-Arm into vector_array" />
+    <MESSAGE value="Small but big update to relative_mover," />
+    <MESSAGE value="P5_executor package added" />
+    <MESSAGE value="Program executor test push to branch." />
+    <MESSAGE value="update to relative mover" />
+    <MESSAGE value="Updated relative mover" />
+    <MESSAGE value="Program loader push without json file location defined" />
+    <MESSAGE value="Updated node names" />
+    <MESSAGE value="added admittance and gripping function in executer, and updated admittance control so it publish to same frame as it gets in" />
+    <MESSAGE value="Updated small changes" />
+    <MESSAGE value="custom launch for camera calibration" />
+    <MESSAGE value="Updating urdf and model" />
+    <MESSAGE value="Updating urdf and model 2" />
+    <MESSAGE value="Updating urdf and model 3" />
+    <MESSAGE value="Simple json program for only alice home :D" />
+    <MESSAGE value="Updated relative mover and program" />
+    <MESSAGE value="New program" />
+    <MESSAGE value="Lets hope this work - relative mover" />
+    <option name="LAST_COMMIT_MESSAGE" value="Lets hope this work - relative mover" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/relative_mover_node_py$est_move_time.coverage" NAME="est_move_time Coverage Results" MODIFIED="1762415993241" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../test" />
     <SUITE FILE_PATH="coverage/P5_Dual_Arm$est_move_time.coverage" NAME="est_move_time Coverage Results" MODIFIED="1761592685189" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../test" />
   </component>
 </project>
