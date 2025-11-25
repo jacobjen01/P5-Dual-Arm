@@ -8,7 +8,7 @@ from tf2_ros import TransformBroadcaster, Buffer, TransformListener
 from p5_safety._error_handling import ErrorHandler
 
 from geometry_msgs.msg import TransformStamped, PoseStamped
-from p5_interfaces.srv import MoveToPose, GetStatus
+from p5_interfaces.srv import MoveToPose, GetStatus, StopRelativeMover
 from p5_interfaces.msg import Tagvector, CommandState
 
 
@@ -71,6 +71,10 @@ class RelativeMover(Node):
         self.move_to_pose_status_service = self.create_service(GetStatus,
                                                         'p5_relative_mover_status',
                                                         self.move_to_pose_status_callback)
+
+        self.stop_service = self.create_service(StopRelativeMover,
+                                                        'p5_relative_mover_stop',
+                                                        self.stop_callback)
 
         self.timer_get_ee_pose_respect_to_base = self.create_timer(1 / self.UPDATE_RATE,
                                                                    self.get_ee_pose_respect_to_base)
@@ -135,6 +139,37 @@ class RelativeMover(Node):
             self.error_handler.report_error(self.error_handler.fatal,
                                             f'Error {e}')
             response.running = False
+            return response
+
+    """
+    Stop relative mover callback
+    """
+
+    def stop_callback(self, request, response):
+        try:
+            response.resp = False
+            if request.stop:
+                self.timer_move_robot.cancel()
+                self.timer_create_goal_frame.cancel()
+                self.timer_get_goal_pose_respect_to_base.cancel()
+
+                self.timer_move_robot.destroy()
+                self.timer_create_goal_frame.destroy()
+                self.timer_get_goal_pose_respect_to_base.destroy()
+
+                self.timer_move_robot = None
+                self.timer_create_goal_frame = None
+                self.timer_get_goal_pose_respect_to_base = None
+
+                response.resp = True
+
+            return response
+
+        except Exception as e:
+            self.get_logger().error(f'Error {e}')
+            self.error_handler.report_error(self.error_handler.fatal,
+                                            f'Error {e}')
+            response.resp = False
             return response
 
     """
