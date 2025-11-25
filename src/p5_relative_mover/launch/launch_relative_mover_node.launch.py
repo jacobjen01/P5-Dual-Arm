@@ -9,13 +9,13 @@ def generate_launch_description():
             executable='relative_mover_node',
             namespace='alice',
             output='screen',
-            parameters=[{'alice'}],
+            parameters=[{'robot_prefix': 'alice'}],
         ),
         Node(
             package='p5_relative_mover',
             executable='relative_mover_node',
             namespace='bob',
             output='screen',
-            parameters=[{'bob'}],
+            parameters=[{'robot_prefix': 'bob'}],
         )
     ])
