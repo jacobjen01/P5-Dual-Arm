@@ -7,12 +7,34 @@ def generate_launch_description():
         #
         # Realsense D435i
         #
+
         Node(
             package='realsense2_camera',
             namespace='camera',
             executable='realsense2_camera_node',
-            name='camera'
-        ),
+            name='camera',
+            parameters=[
+                {'enable_color': True},        # Enable RGB camera
+                {'enable_depth': False},       # Disable depth stream
+                {'enable_infra1': False},      # Disable infrared 1
+                {'enable_infra2': False},      # Disable infrared 2
+                {'enable_fisheye1': False},    # Disable fisheye (if present)
+                {'enable_fisheye2': False},    # Disable fisheye (if present)
+                {'enable_gyro': False},        # Disable gyro
+                {'enable_accel': False},       # Disable accelerometer
+                {'enable_sync': True},        # Disable sync mode
+                {'enable_pointcloud': False},  # Disable point cloud generation
+                {'enable_confidence': False},  # Disable confidence stream
+                {'enable_rgbd': False},        # Disable RGB-D composite
+                {'enable_pose': True},        # Disable pose tracking
+                {'enable_depth_infra': False}, # Disable depth-infra composite
+                {'enable_auto_exposure': True},# Optional: keep auto exposure for color
+                {'color_width': 640},          # Set resolution for color stream
+                {'color_height': 480},         # Set resolution for color stream
+                {'color_fps': 60},             # Set FPS for color stream
+            ]
+        )
+
         #
         # April tag reader
         #
