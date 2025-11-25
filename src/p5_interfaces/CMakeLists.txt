@@ -18,6 +18,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SetReferenceFrame.srv"
   "srv/RobotConfigurations.srv"
   "srv/PoseConfig.srv"
+  "srv/GetMissions.srv"
+  "srv/PostMissions.srv"
 
   DEPENDENCIES geometry_msgs
   DEPENDENCIES std_msgs

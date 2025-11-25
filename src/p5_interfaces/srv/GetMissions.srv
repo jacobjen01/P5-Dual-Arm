@@ -1,0 +1,8 @@
+# Request (empty)
+---
+
+# Response
+string[] guids
+string[] names
+bool success
+string message
