@@ -33,7 +33,7 @@ def generate_launch_description():
                 {'color_height': 480},         # Set resolution for color stream
                 {'color_fps': 60},             # Set FPS for color stream
             ]
-        )
+        ),
 
         #
         # April tag reader
