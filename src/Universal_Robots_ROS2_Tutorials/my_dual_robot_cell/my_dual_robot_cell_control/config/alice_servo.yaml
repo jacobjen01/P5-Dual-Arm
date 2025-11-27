@@ -16,6 +16,10 @@ scale:
 # pose farther away. [seconds]
 system_latency_compensation: 0.04
 
+max_linear_speed: 0.6        # [m/s] for translation
+max_rotational_speed: 3.14   # [rad/s] for rotation (~180°/s)
+
+
 ## Properties of outgoing commands
 publish_period: 0.004  # 1/Nominal publish rate [seconds]
 low_latency_mode: false  # Set this to true to publish as soon as an incoming Twist command is received (publish_period is ignored)
