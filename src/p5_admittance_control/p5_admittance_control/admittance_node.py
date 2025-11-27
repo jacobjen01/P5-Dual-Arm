@@ -186,7 +186,7 @@ class EEAdmittance(Node):
 
     def get_TM_displacement(self):
         # Create transformation matrix for position displacements of EE based on e_xx.
-        r = R.from_euler('zxy', self.x_ee[3:6])
+        r = R.from_euler('xyz', self.x_ee[3:6])
         r.as_matrix()
         T_delta = np.vstack((np.hstack((r.as_matrix(), [[self.x_ee[0]],
                                                         [self.x_ee[1]], [self.x_ee[2]]])), [0, 0, 0, 1]))

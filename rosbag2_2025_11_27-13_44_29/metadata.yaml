@@ -1,0 +1,44 @@
+rosbag2_bagfile_information:
+  version: 9
+  storage_identifier: mcap
+  duration:
+    nanoseconds: 16624488342
+  starting_time:
+    nanoseconds_since_epoch: 1764251070860528008
+  message_count: 4157
+  topics_with_message_count:
+    - topic_metadata:
+        name: /alice_force_torque_sensor_broadcaster/wrench
+        type: geometry_msgs/msg/WrenchStamped
+        serialization_format: cdr
+        offered_qos_profiles:
+          - history: unknown
+            depth: 0
+            reliability: reliable
+            durability: transient_local
+            deadline:
+              sec: 9223372036
+              nsec: 854775807
+            lifespan:
+              sec: 9223372036
+              nsec: 854775807
+            liveliness: automatic
+            liveliness_lease_duration:
+              sec: 9223372036
+              nsec: 854775807
+            avoid_ros_namespace_conventions: false
+        type_description_hash: RIHS01_8dc3deaf06b2ab281f9f9a742a8961c328ca7cec16e3fd6586d3a5c83fa78f77
+      message_count: 4157
+  compression_format: ""
+  compression_mode: ""
+  relative_file_paths:
+    - rosbag2_2025_11_27-13_44_29_0.mcap
+  files:
+    - path: rosbag2_2025_11_27-13_44_29_0.mcap
+      starting_time:
+        nanoseconds_since_epoch: 1764251070860528008
+      duration:
+        nanoseconds: 16624488342
+      message_count: 4157
+  custom_data: ~
+  ros_distro: jazzy

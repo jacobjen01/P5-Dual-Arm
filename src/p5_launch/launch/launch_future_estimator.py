@@ -31,9 +31,9 @@ def generate_launch_description():
                 {'enable_auto_exposure': True},# Optional: keep auto exposure for color
                 {'color_width': 640},          # Set resolution for color stream
                 {'color_height': 480},         # Set resolution for color stream
-                {'color_fps': 60},             # Set FPS for color stream
+                {'color_fps': 20},             # Set FPS for color stream
             ]
-        )
+        ),
 
         #
         # April tag reader

@@ -337,7 +337,7 @@ class RelativeMover(Node):
     """
     def _publish_pose(self, pose):
         pose_goal = PoseStamped()
-        pose_goal.header.frame_id = "alice_base_link"  # "link_base"
+        pose_goal.header.frame_id = f"{self.robot_prefix}_base_link"  # "link_base"
 
         pose_goal.pose.position.x = pose[0]
         pose_goal.pose.position.y = pose[1]

@@ -4,61 +4,14 @@ import json
 import rclpy
 from rclpy.action import ActionClient
 
-from std_msgs.msg import Bool
 from builtin_interfaces.msg import Duration
 from action_msgs.msg import GoalStatus
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from control_msgs.action import FollowJointTrajectory
 from control_msgs.msg import JointTolerance
 
-from rclpy.node import Node
-from controller_manager_msgs.srv import SwitchController
 from p5_interfaces.srv import MoveToPreDefPose
 from p5_interfaces.msg import CommandState
-
-
-class ControllerManager(Node):
-    def __init__(self):
-        super().__init__('p5_controller_manager_client')
-        self.client = self.create_client(SwitchController, '/controller_manager/switch_controller')
-        while not self.client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Waiting for service /controller_manager/switch_controller...')
-
-    def switch_controller(self, controllers_to_stop, controllers_to_start):
-        request = SwitchController.Request()
-        request.deactivate_controllers = controllers_to_stop
-        request.activate_controllers = controllers_to_start
-        request.strictness = 2  # Use STRICT
-        request.activate_asap = True  # Activate the new controller as soon as possible
-
-        future = self.client.call_async(request)
-        rclpy.spin_until_future_complete(self, future)
-
-        if future.result() is not None:
-            self.get_logger().info(
-                f'Successfully switched controllers: {controllers_to_stop} -> {controllers_to_start}')
-        else:
-            self.get_logger().error('Failed to call service: %r' % future.exception())
-
-
-def switch_to_joint_control(robot_name):
-    controller_manager = ControllerManager()
-
-    controllers_to_stop = [robot_name+'_forward_position_controller']
-    controllers_to_start = [robot_name+'_scaled_joint_trajectory_controller']
-    controller_manager.switch_controller(controllers_to_stop, controllers_to_start)
-
-    controller_manager.destroy_node()
-
-
-def switch_to_position_control(robot_name):
-    controller_manager = ControllerManager()
-
-    controllers_to_start = [robot_name+'_forward_position_controller']
-    controllers_to_stop = [robot_name+'_scaled_joint_trajectory_controller']
-    controller_manager.switch_controller(controllers_to_stop, controllers_to_start)
-
-    controller_manager.destroy_node()
 
 
 class JTCClient(rclpy.node.Node):
@@ -72,7 +25,7 @@ class JTCClient(rclpy.node.Node):
             self.handle_robot_move_to_service)
 
         self.publish_status = self.create_publisher(CommandState, '/p5_command_state', 10)
-        timer_period = 0.1  # seconds
+        timer_period = 1  # seconds
         self.timer = self.create_timer(timer_period, self.get_status)
         self.running = True
         self.robot_name = 'alice'
@@ -101,7 +54,7 @@ class JTCClient(rclpy.node.Node):
         except BaseException:
             response.success = False
             return response
-        switch_to_joint_control(self.robot_name)
+        #switch_to_joint_control(self.robot_name)
         self.handle_controller()
         response.success = True
         return response
@@ -170,7 +123,7 @@ class JTCClient(rclpy.node.Node):
         self.get_logger().info(f"Done with result: {self.status_to_str(status)}")
         if status == GoalStatus.STATUS_SUCCEEDED:
             time.sleep(2)
-            switch_to_position_control(self.robot_name)
+            #switch_to_position_control(self.robot_name)
             self.running = True
         else:
             if result.error_code != FollowJointTrajectory.Result.SUCCESSFUL:

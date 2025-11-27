@@ -14,6 +14,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Error.msg"
   "msg/Tagvector.msg"
   "msg/TagvectorArray.msg"
+  "msg/CommandState.msg"
   "srv/MoveToPose.srv"
   "srv/SetLinearMovement.srv"
   "srv/SetReferenceFrame.srv"
@@ -26,7 +27,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GetStatus.srv"
   "srv/LoadProgram.srv"
   "srv/RunProgram.srv"
-  "msg/CommandState.msg"
+  "srv/StopRelativeMover.srv"
 
   DEPENDENCIES geometry_msgs
   DEPENDENCIES std_msgs

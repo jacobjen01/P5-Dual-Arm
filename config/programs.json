@@ -12,8 +12,17 @@
             "command": "grip",
             "args": {"action": false}
           }, {
+			"command": "sync",
+			"args": {"sync_id": "y", "threads": ["alice_thread", "bob_thread"]}
+		  }, {
             "command": "c_move",
             "args": {"config_name": "ALICE_HOME"}
+          }, {
+			"command": "sync",
+			"args": {"sync_id": "z", "threads": ["alice_thread", "bob_thread"]}
+		  }, {
+            "command": "c_move",
+            "args": {"config_name": "ALICE_GRIP_READY"}
           }, {
             "command": "r_move",
             "args": {"frame": "tag36h11:0", "linear": false, "use_tracking_velocity": false, "pose": [0.0, 0.15, 0.125, 0.70711, 0.70711, 0.0, 0.0]}
@@ -26,9 +35,109 @@
           }, {
             "command": "r_move",
             "args": {"frame": "tag36h11:0", "linear": false, "use_tracking_velocity": false, "pose": [0.0, 0.15, 0.125, 0.70711, 0.70711, 0.0, 0.0]}
-          }
+          }, {
+            "command": "c_move",
+            "args": {"config_name": "ALICE_HOME"}
+          }, {
+			"command": "sync",
+			"args": {"sync_id": "x", "threads": ["alice_thread", "bob_thread"]}
+		  }
         ]
-      }
+      }, {
+		"name": "bob_thread",
+		"robot_name": "bob",
+		"commands": [
+		  {
+			"command": "grip",
+			"args": {"action": false}
+		  }, {
+            "command": "c_move",
+            "args": {"config_name": "BOB_HOME"}
+          }, {
+			"command": "sync",
+			"args": {"sync_id": "y", "threads": ["alice_thread", "bob_thread"]}
+		  }, {
+			"command": "sync",
+			"args": {"sync_id": "z", "threads": ["alice_thread", "bob_thread"]}
+		  }, {
+			"command": "sync",
+			"args": {"sync_id": "x", "threads": ["alice_thread", "bob_thread"]}
+		  }, {
+            "command": "c_move",
+            "args": {"config_name": "BOB_GRIP_READY"}
+          }, {
+            "command": "r_move",
+            "args": {"frame": "tag36h11:2", "linear": false, "use_tracking_velocity": false, "pose": [0.0, 0.15, 0.125, 0.70711, 0.70711, 0.0, 0.0]}
+          }, {
+            "command": "r_move",
+            "args": {"frame": "tag36h11:2", "linear": false, "use_tracking_velocity": false, "pose": [0.0, 0.046, 0.125, 0.70711, 0.70711, 0.0, 0.0]}
+          }, {
+            "command": "grip",
+            "args": {"action": true}
+          }, {
+            "command": "r_move",
+            "args": {"frame": "tag36h11:2", "linear": false, "use_tracking_velocity": false, "pose": [0.0, 0.15, 0.125, 0.70711, 0.70711, 0.0, 0.0]}
+          }, {
+            "command": "c_move",
+            "args": {"config_name": "BOB_HOME"}
+          }
+		]
+	  }
     ]
+  }, "bi_manual": {
+    "description": "Test BI manual",
+    "date": "25-11-2025",
+    "author": "Thor",
+    "threads": [
+	  {
+        "name": "alice_thread",
+        "robot_name": "alice",
+        "commands": [
+          {
+            "command": "grip",
+            "args": {"action": true}
+          }, {
+            "command": "c_move",
+            "args": {"config_name": "ALICE_BI_START"}
+          }, {
+			"command": "sync",
+			"args": {"sync_id": "y", "threads": ["alice_thread", "bob_thread"]}
+		  }, {
+            "command": "r_move",
+            "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]}
+		  }, {
+			"command": "admittance",
+			"args": {"action": true}
+		  }
+		]
+	  }, {
+		"name": "bob_thread",
+		"robot_name": "bob",
+		"commands": [
+          {
+            "command": "grip",
+            "args": {"action": true}
+          }, {
+			"command": "sync",
+			"args": {"sync_id": "y", "threads": ["alice_thread", "bob_thread"]}
+		  }, {
+            "command": "c_move",
+            "args": {"config_name": "BOB_BI_START"}
+          }, {
+            "command": "r_move",
+            "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.05, 0.004, 0.291, 1.0, 0.0, 0.0, 0.0]}
+		  }, {
+            "command": "r_move",
+            "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.02, 0.004, 0.291, 1.0, 0.0, 0.0, 0.0]}
+		  }, {
+            "command": "grip",
+            "args": {"action": false}
+          }, {
+            "command": "r_move",
+            "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.05, 0.004, 0.291, 1.0, 0.0, 0.0, 0.0]}
+		  }
+		]
+	  }
+	]
   }
 }

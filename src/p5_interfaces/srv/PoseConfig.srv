@@ -1,4 +1,4 @@
 string pose
-float32[6] joints
+string robot_name
 ---
 bool message

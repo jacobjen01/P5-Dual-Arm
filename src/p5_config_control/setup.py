@@ -26,6 +26,7 @@ setup(
     entry_points={
         'console_scripts': [
             'config_node_config = p5_config_control.config_node_config:main',
+            'listen_joint_states = p5_config_control.listen_joint_states:main',
             'config_node_controller = p5_config_control.config_node_controller:main'
         ],
     },

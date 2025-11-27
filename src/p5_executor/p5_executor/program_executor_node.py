@@ -9,8 +9,9 @@ from tf2_ros import TransformBroadcaster, Buffer, TransformListener
 from ur_msgs.srv import SetIO
 from p5_safety._error_handling import ErrorHandler
 from moveit_msgs.srv import ServoCommandType
+from controller_manager_msgs.srv import SwitchController
 
-from p5_interfaces.srv import LoadProgram, RunProgram, MoveToPose, MoveToPreDefPose, AdmittanceSetStatus
+from p5_interfaces.srv import LoadProgram, RunProgram, MoveToPose, MoveToPreDefPose, AdmittanceSetStatus, GetStatus, StopRelativeMover
 from p5_interfaces.msg import CommandState
 
 
@@ -99,6 +100,16 @@ class ProgramExecutor(Node):
 
         config_name = args['config_name']
 
+        client, req = self._get_client_and_request(SwitchController, '/controller_manager/switch_controller')
+
+        req.deactivate_controllers = [robot_name + '_forward_position_controller']
+        req.activate_controllers = [robot_name + '_scaled_joint_trajectory_controller']
+        req.strictness = 2  # Use STRICT
+        req.activate_asap = True  # Activate the new controller as soon as possible
+
+        future = client.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+
         client, req = self._get_client_and_request(MoveToPreDefPose, 'p5_move_to_pre_def_pose')
 
         req.robot_name = robot_name
@@ -116,6 +127,16 @@ class ProgramExecutor(Node):
         linear = args['linear']
         use_tracking_velocity = args['use_tracking_velocity']
         frame = args['frame']
+        client, req = self._get_client_and_request(SwitchController, '/controller_manager/switch_controller')
+
+        req.activate_controllers = [robot_name + '_forward_position_controller']
+        req.deactivate_controllers = [robot_name + '_scaled_joint_trajectory_controller']
+        req.strictness = 2  # Use STRICT
+        req.activate_asap = True  # Activate the new controller as soon as possible
+
+        future = client.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+
 
         servo_node_command_client = self.create_client(ServoCommandType, f'{robot_name}/servo_node/switch_command_type')
 
@@ -127,8 +148,6 @@ class ProgramExecutor(Node):
 
         future = servo_node_command_client.call_async(cmd_type)
         rclpy.spin_until_future_complete(self, future)
-
-        self.feedback[f'{robot_name}_r_move']
 
         client, req = self._get_client_and_request(MoveToPose, f"{robot_name}/p5_move_to_pose")
 
@@ -146,25 +165,25 @@ class ProgramExecutor(Node):
 
         future = client.call_async(req)
         rclpy.spin_until_future_complete(self, future)
-        #time.sleep(2)
-
-        self.get_logger().info(f'{self.feedback}')
-        while not f'{robot_name}_r_move' in self.feedback:
-            continue
-        while not self.feedback[f'{robot_name}_r_move']:
-            continue
+        time.sleep(0.2)
+        client, req = self._get_client_and_request(GetStatus, f"{robot_name}/p5_relative_mover_status")
+        while True:
+            future = client.call_async(req)
+            rclpy.spin_until_future_complete(self, future)
+            time.sleep(0.2)
+            response = future.result()
+            if response.running:
+                break
 
     def _command_synchronize(self, name, robot_name, args):
         cache_id = f"sync_{args["sync_id"]}"
 
         if cache_id in self.cache:
             self.cache[cache_id].append(name)
-
-            while not len(self.cache[cache_id]) == len(args['threads']):
-                continue
-
         else:
-            self.cache[cache_id] = []
+            self.cache[cache_id] = [name]
+        while not len(self.cache[cache_id]) == len(args['threads']):
+            continue
 
     def _command_frame_availability(self, name, robot_name, args):
         frame = args['frame_name']

@@ -24,7 +24,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'program_executor_node = p5_executor.program_executor_node:main'
+            'program_executor_node = p5_executor.program_executor_node:main',
+            'program_saver_node = p5_executor.program_saver_node:main'
         ],
     },
 )
