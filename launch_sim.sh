@@ -1,4 +1,4 @@
-!#/bin/bash
+#!/bin/bash
 
 export ROS_DOMAIN_ID=69
 source install/setup.bash
