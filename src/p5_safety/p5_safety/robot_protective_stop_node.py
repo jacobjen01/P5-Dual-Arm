@@ -99,8 +99,8 @@ class RobotProtectiveStop(Node):
             self.error_handler.report_error(self.error_handler.info,
                                             'Protective stop triggered! Freezing current TF pose permanently.')
 
-            self.protective_stop_alice = self._get_tf_tree_pose("alice_base_frame", "alice_end_effector_frame")
-            self.protective_stop_bob = self._get_tf_tree_pose("bob_base_frame", "bob_end_effector_frame")
+            self.protective_stop_alice = self._get_tf_tree_pose("alice_base_link", "alice_tool0")
+            self.protective_stop_bob = self._get_tf_tree_pose("bob_base_link", "bob_tool0")
 
 
 def main(args=None):
