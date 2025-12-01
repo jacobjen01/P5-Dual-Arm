@@ -77,18 +77,24 @@ class EndEffectorFrameLogger(Node):
     def data_logging(self):
         try:
             now = rclpy.time.Time()
-            trans = self.tf_buffer.lookup_transform("alice_base_link", "alice_tool0", now)
+            trans = self.tf_buffer.lookup_transform("mir", "alice_tool0", now)
             crd = trans.transform.translation
             quat = trans.transform.rotation
             alice_pose = [crd.x, crd.y, crd.z, quat.x, quat.y, quat.z, quat.w]
 
-            trans = self.tf_buffer.lookup_transform("bob_base_link", "bob_tool0", now)
+            trans = self.tf_buffer.lookup_transform("mir", "bob_tool0", now)
             crd = trans.transform.translation
             quat = trans.transform.rotation
             bob_pose = [crd.x, crd.y, crd.z, quat.x, quat.y, quat.z, quat.w]
 
+            trans = self.tf_buffer.lookup_transform("mir", "tag36h11:0", now)
+            crd = trans.transform.translation
+            quat = trans.transform.rotation
+            tag_pose = [crd.x, crd.y, crd.z, quat.x, quat.y, quat.z, quat.w]
+
             self.data["pose_alice"].append(alice_pose)
             self.data["pose_bob"].append(bob_pose)
+            self.data["pose_target"].append(tag_pose)
 
             self.get_logger().info("Logging data...")
         except Exception as e:
