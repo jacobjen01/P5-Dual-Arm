@@ -4,9 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bdec0d9e-6a6b-40e9-b5ac-25ef755822e9" name="Changes" comment="Relative mover added stop service call">
+    <list default="true" id="bdec0d9e-6a6b-40e9-b5ac-25ef755822e9" name="Changes" comment="Simple datalogger saving directly to matlab for testing purposes :)">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/p5_relative_mover/launch/launch_relative_mover_node.launch.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/p5_relative_mover/launch/launch_relative_mover_node.launch.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/p5_data_logger/p5_data_logger/end_effector_frame_logger.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/p5_data_logger/p5_data_logger/end_effector_frame_logger.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -49,21 +49,21 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.est_move_time.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "C:/Users/rdk/OneDrive - Aalborg Universitet/AAU/5th semester/P5/code/P5-Dual-Arm/src/p5_interfaces/srv",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "run.code.analysis.last.selected.profile": "pProject Default",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.est_move_time.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/rdk/OneDrive - Aalborg Universitet/AAU/5th semester/P5/code/P5-Dual-Arm/src/p5_interfaces/srv&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\rdk\OneDrive - Aalborg Universitet\AAU\5th semester\P5\code\P5-Dual-Arm\src\p5_interfaces\srv" />
@@ -133,7 +133,9 @@
       <workItem from="1763740735661" duration="4144000" />
       <workItem from="1763748278720" duration="6340000" />
       <workItem from="1764057269954" duration="586000" />
-      <workItem from="1764057926540" duration="3378000" />
+      <workItem from="1764057926540" duration="4729000" />
+      <workItem from="1764617232182" duration="2428000" />
+      <workItem from="1764619736643" duration="52000" />
     </task>
     <task id="LOCAL-00001" summary="Updating servo.yaml files and relative mover.">
       <option name="closed" value="true" />
@@ -335,11 +337,30 @@
       <option name="project" value="LOCAL" />
       <updated>1764057785666</updated>
     </task>
-    <option name="localTasksCounter" value="26" />
+    <task id="LOCAL-00026" summary="Relative mover updated launch file">
+      <option name="closed" value="true" />
+      <created>1764061948368</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1764061948368</updated>
+    </task>
+    <task id="LOCAL-00027" summary="Simple datalogger saving directly to matlab for testing purposes :)">
+      <option name="closed" value="true" />
+      <created>1764619674513</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1764619674513</updated>
+    </task>
+    <option name="localTasksCounter" value="28" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="com.intellij.fileTypeFactory" implementationName="*.srv" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
     <option name="RECENT_FILTERS">
@@ -405,7 +426,10 @@
     <MESSAGE value="New program" />
     <MESSAGE value="Lets hope this work - relative mover" />
     <MESSAGE value="Relative mover added stop service call" />
-    <option name="LAST_COMMIT_MESSAGE" value="Relative mover added stop service call" />
+    <MESSAGE value="Update frame names for protective stop poses&#10;&#10;Small fix to safety stop" />
+    <MESSAGE value="Relative mover updated launch file" />
+    <MESSAGE value="Simple datalogger saving directly to matlab for testing purposes :)" />
+    <option name="LAST_COMMIT_MESSAGE" value="Simple datalogger saving directly to matlab for testing purposes :)" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/relative_mover_node_py$est_move_time.coverage" NAME="est_move_time Coverage Results" MODIFIED="1762415993241" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../test" />
