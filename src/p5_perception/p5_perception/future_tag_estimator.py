@@ -137,7 +137,7 @@ class FutureTagEstimator(Node):
                 else:
                     tag_key = child.replace('/', '_')                           # Håndterer andre frame navne
 
-                crd = self.get_tf_tree_crd("alice_base_link", child)            # Opdaterer transform for tag i forhold til alice_base_link
+                crd = self.get_tf_tree_crd("mir", child)            # Opdaterer transform for tag i forhold til alice_base_link
                 if len(crd) == 0:
                     continue
                 tx, ty, tz = crd
