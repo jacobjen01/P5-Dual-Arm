@@ -29,6 +29,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/LoadProgram.srv"
   "srv/RunProgram.srv"
   "srv/StopRelativeMover.srv"
+  "srv/LoadRawJSON.srv"
 
   DEPENDENCIES geometry_msgs
   DEPENDENCIES std_msgs
