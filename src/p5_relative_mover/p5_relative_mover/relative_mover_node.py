@@ -22,6 +22,8 @@ class RelativeMover(Node):
         self.UPDATE_RATE = 100  # Number of times the system shall update per second
         self.CRD_OFFSET = 0.005 # 2 mm off.
         self.ANGLE_OFFSET = 0.01 # in radians.
+        self.ROBOT_BASE_ORIENTATIONS = {"alice": np.array([-0.3557, -0.1534, 0.8516, 0.3531]),
+                                "bob": np.array([-0.2285, 0.2261, -0.0575, 0.9452])}
 
         self.error_handler = ErrorHandler(self)
 
@@ -33,6 +35,9 @@ class RelativeMover(Node):
         self.declare_parameter('robot_prefix', 'alice')
         self.robot_prefix = self.get_parameter('robot_prefix').get_parameter_value().string_value
 
+        robot_R = R.from_quat(self.ROBOT_BASE_ORIENTATIONS[self.robot_prefix])
+        self.velocity_rotation_matrix = robot_R.as_matrix() 
+        
         self.linear_movement = False
         self.linear_movement_use_tracking_velocity = False
         self.reference_frame = None
@@ -178,7 +183,13 @@ class RelativeMover(Node):
     def get_goal_velocity_callback(self, msg):
         for vector in msg.vectors:
             if vector.tag_id == self.reference_frame:
-                self.goal_pose_velocity = np.array([vector.vx_unit, vector.vy_unit, vector.vz_unit])
+    
+                vec = np.array([[vector.vx_unit],
+                                [vector.vy_unit],
+                                [vector.vz_unit]])
+                
+                self.goal_pose_velocity = (self.velocity_rotation_matrix @ vec).flatten()
+
                 self.get_logger().info(f"Received velocity {[vector.vx_unit, vector.vy_unit, vector.vz_unit]}")
 
     """
