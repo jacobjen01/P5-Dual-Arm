@@ -11,7 +11,7 @@ from p5_safety._error_handling import ErrorHandler
 from moveit_msgs.srv import ServoCommandType
 from controller_manager_msgs.srv import SwitchController
 
-from p5_interfaces.srv import LoadProgram, RunProgram, MoveToPose, MoveToPreDefPose, AdmittanceSetStatus, GetStatus, StopRelativeMover, AdmittanceSendData
+from p5_interfaces.srv import LoadProgram, RunProgram, MoveToPose, MoveToPreDefPose, AdmittanceSetStatus, GetStatus, StopRelativeMover, AdmittanceSendData, LoadRawJSON
 from p5_interfaces.msg import CommandState
 
 
@@ -38,8 +38,13 @@ class ProgramExecutor(Node):
 
         self.load_program_service = self.create_service(LoadProgram, f'program_executor/load_program',
                                                         self.load_program_callback)
+
+        self.load_program_json_service = self.create_service(LoadProgram, f'program_executor/load_raw_JSON',
+                                                        self.load_raw_json_callback)
+        
         self.run_program_service = self.create_service(RunProgram, f'program_executor/run_program',
                                                        self.run_program_callback)
+        
         self.command_state_subscriber = self.create_subscription(CommandState,
                                                             "p5_command_state",
                                                             self.get_command_state, 10)
@@ -67,6 +72,17 @@ class ProgramExecutor(Node):
 
         response.resp = True
         return response
+
+    def load_raw_json_callback(self, request, response):
+        raw_json = request.json_data
+        programs = json.loads(raw_json)
+        keys = list(programs.keys())
+
+        self.program = programs[keys[0]]
+        
+        response.resp = True
+        return response
+
 
     def run_program_callback(self, request, response):
         if self.program is None:
@@ -272,11 +288,11 @@ class ProgramExecutor(Node):
         rclpy.spin_until_future_complete(self, future)
 
     def _command_admittance(self, name, robot_name, args):
-        active = args['action']
+        action = [args['fx'], args['fy'], args['fz'], args['tx'], args['ty'], args['tz']]
 
         client, req = self._get_client_and_request(AdmittanceSetStatus, f'{robot_name}/p5_admittance_set_state')
 
-        req.active = active
+        req.active = action
 
         future = client.call_async(req)
         rclpy.spin_until_future_complete(self, future)
