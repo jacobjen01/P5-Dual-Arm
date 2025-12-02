@@ -11,7 +11,7 @@ from p5_safety._error_handling import ErrorHandler
 from moveit_msgs.srv import ServoCommandType
 from controller_manager_msgs.srv import SwitchController
 
-from p5_interfaces.srv import LoadProgram, RunProgram, MoveToPose, MoveToPreDefPose, AdmittanceSetStatus, GetStatus, StopRelativeMover
+from p5_interfaces.srv import LoadProgram, RunProgram, MoveToPose, MoveToPreDefPose, AdmittanceSetStatus, GetStatus, StopRelativeMover, AdmittanceSendData
 from p5_interfaces.msg import CommandState
 
 
@@ -24,6 +24,7 @@ class ProgramExecutor(Node):
         self.LOOKUP = {
             "c_move": self._command_c_move,
             "r_move": self._command_r_move,
+            "r_move_fe": self._command_r_move_fe,
             "sync": self._command_synchronize,
             "frame_availability": self._command_frame_availability,
             "grip": self._command_grip,
@@ -84,6 +85,17 @@ class ProgramExecutor(Node):
         response.resp = True
         return response
 
+    def switch_controller(self, controller_activate, controller_deactivate):
+        client, req = self._get_client_and_request(SwitchController, '/controller_manager/switch_controller')
+
+        req.deactivate_controllers = [controller_deactivate]
+        req.activate_controllers = [controller_activate]
+        req.strictness = 2  # Use STRICT
+        req.activate_asap = True  # Activate the new controller as soon as possible
+
+        future = client.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+
     def _run_program_thread(self, thread_data):
         name = thread_data['name']
         robot_name = thread_data['robot_name']
@@ -99,17 +111,7 @@ class ProgramExecutor(Node):
     def _command_c_move(self, name, robot_name, args):
 
         config_name = args['config_name']
-
-        client, req = self._get_client_and_request(SwitchController, '/controller_manager/switch_controller')
-
-        req.deactivate_controllers = [robot_name + '_forward_position_controller']
-        req.activate_controllers = [robot_name + '_scaled_joint_trajectory_controller']
-        req.strictness = 2  # Use STRICT
-        req.activate_asap = True  # Activate the new controller as soon as possible
-
-        future = client.call_async(req)
-        rclpy.spin_until_future_complete(self, future)
-
+        self.switch_controller(f'{robot_name}_scaled_joint_trajectory_controller', f'{robot_name}_forward_position_controller')
         client, req = self._get_client_and_request(MoveToPreDefPose, 'p5_move_to_pre_def_pose')
 
         req.robot_name = robot_name
@@ -127,16 +129,7 @@ class ProgramExecutor(Node):
         linear = args['linear']
         use_tracking_velocity = args['use_tracking_velocity']
         frame = args['frame']
-        client, req = self._get_client_and_request(SwitchController, '/controller_manager/switch_controller')
-
-        req.activate_controllers = [robot_name + '_forward_position_controller']
-        req.deactivate_controllers = [robot_name + '_scaled_joint_trajectory_controller']
-        req.strictness = 2  # Use STRICT
-        req.activate_asap = True  # Activate the new controller as soon as possible
-
-        future = client.call_async(req)
-        rclpy.spin_until_future_complete(self, future)
-
+        self.switch_controller(f'{robot_name}_forward_position_controller', f'{robot_name}_scaled_joint_trajectory_controller')
 
         servo_node_command_client = self.create_client(ServoCommandType, f'{robot_name}/servo_node/switch_command_type')
 
@@ -174,6 +167,60 @@ class ProgramExecutor(Node):
             response = future.result()
             if response.running:
                 break
+
+    def _command_r_move_fe(self, name, robot_name, args):
+        goal_foce = args['force']
+        pose = args['pose']
+        linear = args['linear']
+        use_tracking_velocity = args['use_tracking_velocity']
+        frame = args['frame']
+        self.switch_controller(f'{robot_name}_forward_position_controller', f'{robot_name}_scaled_joint_trajectory_controller')
+
+        servo_node_command_client = self.create_client(ServoCommandType, f'{robot_name}/servo_node/switch_command_type')
+
+        while not servo_node_command_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+
+        cmd_type = ServoCommandType.Request()
+        cmd_type.command_type = 2
+
+        future = servo_node_command_client.call_async(cmd_type)
+        rclpy.spin_until_future_complete(self, future)
+
+        client, req = self._get_client_and_request(MoveToPose, f"{robot_name}/p5_move_to_pose")
+
+        req.pose.position.x = pose[0]
+        req.pose.position.y = pose[1]
+        req.pose.position.z = pose[2]
+        req.pose.orientation.x = pose[3]
+        req.pose.orientation.y = pose[4]
+        req.pose.orientation.z = pose[5]
+        req.pose.orientation.w = pose[6]
+
+        req.linear = linear
+        req.use_tracking_velocity = use_tracking_velocity
+        req.frame = frame
+
+        future = client.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+        time.sleep(0.2)
+        #client, req = self._get_client_and_request(GetStatus, f"{robot_name}/p5_relative_mover_status")
+        client, req = self._get_client_and_request(AdmittanceSendData, f"{robot_name}/p5_admittance_get_force_torque")
+        while True:
+            #future = client.call_async(req)
+            #rclpy.spin_until_future_complete(self, future)
+            #response = future.result()
+            #if response.running:
+                #break
+            future = client.call_async(req)
+            rclpy.spin_until_future_complete(self, future)
+            response = future.result()
+            time.sleep(1)
+            self.get_logger().info(f'{abs(response.ft[0])}, {abs(response.ft[1])}, {abs(response.ft[2])}')
+            if goal_foce[0] < abs(response.ft[0]) and goal_foce[1] < abs(response.ft[1]) and goal_foce[2] < abs(response.ft[2]):
+                break
+        self.get_logger().info('force reached')
+        self.switch_controller(f'{robot_name}_scaled_joint_trajectory_controller', f'{robot_name}_forward_position_controller')
 
     def _command_synchronize(self, name, robot_name, args):
         cache_id = f"sync_{args["sync_id"]}"
@@ -230,7 +277,6 @@ class ProgramExecutor(Node):
         client, req = self._get_client_and_request(AdmittanceSetStatus, f'{robot_name}/p5_admittance_set_state')
 
         req.active = active
-        req.update_rate = 250
 
         future = client.call_async(req)
         rclpy.spin_until_future_complete(self, future)

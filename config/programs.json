@@ -97,17 +97,23 @@
             "command": "grip",
             "args": {"action": true}
           }, {
+			"command": "admittance",
+			"args": {"action": [false, false, false, false, false, false]}
+		  }, {
+			"command": "sync",
+			"args": {"sync_id": "y", "threads": ["alice_thread", "bob_thread"]}
+		  }, {
             "command": "c_move",
             "args": {"config_name": "ALICE_BI_START"}
           }, {
 			"command": "sync",
-			"args": {"sync_id": "y", "threads": ["alice_thread", "bob_thread"]}
-		  }, {
-            "command": "r_move",
-            "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]}
+			"args": {"sync_id": "x", "threads": ["alice_thread", "bob_thread"]}
 		  }, {
 			"command": "admittance",
-			"args": {"action": true}
+			"args": {"action": [false, false, false, false, false, false]}
+		  }, {
+            "command": "r_move",
+            "args": {"frame": "alice_base_link", "linear": false, "use_tracking_velocity": false, "pose": [-0.354, 0.15, 0.096, -0.311, 0.856, -0.160, -0.380]}
 		  }
 		]
 	  }, {
@@ -118,23 +124,35 @@
             "command": "grip",
             "args": {"action": true}
           }, {
+			"command": "admittance",
+			"args": {"action": [false, false, false, false, false, false]}
+		  }, {
+            "command": "c_move",
+            "args": {"config_name": "BOB_HOME"}
+          }, {
 			"command": "sync",
 			"args": {"sync_id": "y", "threads": ["alice_thread", "bob_thread"]}
+		  }, {
+			"command": "sync",
+			"args": {"sync_id": "x", "threads": ["alice_thread", "bob_thread"]}
 		  }, {
             "command": "c_move",
             "args": {"config_name": "BOB_BI_START"}
           }, {
             "command": "r_move",
-            "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.05, 0.004, 0.291, 1.0, 0.0, 0.0, 0.0]}
+            "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.05, 0.004, 0.287, 1.0, 0.0, 0.0, 0.0]}
 		  }, {
-            "command": "r_move",
-            "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.02, 0.004, 0.291, 1.0, 0.0, 0.0, 0.0]}
+			"command": "admittance",
+			"args": {"action": [true, true, true, false, false, false]}
+		  }, {
+            "command": "r_move_fe",
+            "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.01, 0.004, 0.287, 1.0, 0.0, 0.0, 0.0], "force": [4.0, 0.0, 0.0, 0.0, 0.0, 0.0]}
 		  }, {
             "command": "grip",
             "args": {"action": false}
           }, {
             "command": "r_move",
-            "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.05, 0.004, 0.291, 1.0, 0.0, 0.0, 0.0]}
+            "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.05, 0.004, 0.287, 1.0, 0.0, 0.0, 0.0]}
 		  }
 		]
 	  }

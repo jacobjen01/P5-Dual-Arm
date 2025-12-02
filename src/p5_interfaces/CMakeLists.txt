@@ -24,6 +24,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SaveAdmittanceParam.srv"
   "srv/AdmittanceSetStatus.srv"
   "srv/AdmittanceShowStatus.srv"
+  "srv/AdmittanceSendData.srv"
   "srv/GetStatus.srv"
   "srv/LoadProgram.srv"
   "srv/RunProgram.srv"

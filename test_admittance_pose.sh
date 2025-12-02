@@ -1,0 +1,1 @@
+ros2 service call /alice/p5_move_to_pose p5_interfaces/srv/MoveToPose "{pose: {position: {x: -0.10, y: -0.50, z: 1.9}, orientation: {x: 0.51, y: -0.49, z: 0.51, w: 0.47}}, linear: false, use_tracking_velocity: false, frame: 'world'}"

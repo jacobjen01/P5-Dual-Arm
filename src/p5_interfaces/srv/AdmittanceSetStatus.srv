@@ -1,5 +1,4 @@
-bool active
-int32 update_rate
+bool[6] active
 ---
 bool message
 

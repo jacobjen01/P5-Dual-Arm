@@ -19,8 +19,7 @@ from p5_interfaces.srv import AdmittanceConfig
 from p5_interfaces.srv import SaveAdmittanceParam
 import json
 
-from p5_interfaces.srv import AdmittanceShowStatus
-from p5_interfaces.srv import AdmittanceSetStatus
+from p5_interfaces.srv import AdmittanceShowStatus, AdmittanceSetStatus, AdmittanceSendData
 
 
 class EEAdmittance(Node):
@@ -32,7 +31,6 @@ class EEAdmittance(Node):
         self.parameters = self.get_parameter('parameters').value
 
         # Create service servers
-        self.active = False
         self.config = self.create_service(
             AdmittanceConfig,
             'p5_admittance_config',
@@ -49,6 +47,10 @@ class EEAdmittance(Node):
             AdmittanceSetStatus,
             'p5_admittance_set_state',
             self.set_status)
+        self.send_sensor_data = self.create_service(
+            AdmittanceSendData,
+            'p5_admittance_get_force_torque',
+            self.send_force_torque)
 
         # Load parameters
         try:
@@ -78,6 +80,12 @@ class EEAdmittance(Node):
         self.x_goal = np.zeros(7)             # goal pose in quantariones (x, y, z, qx, qy, qz, qw)
         self.wrench = np.zeros(6)                  # latest measured wrench
         self.goal_received = False
+        self.fx_on = False
+        self.fy_on = False
+        self.fz_on = False
+        self.tx_on = False
+        self.ty_on = False
+        self.tz_on = False
 
         self.robot_force = self.create_subscription(WrenchStamped,
                                                     f'/{self.robot_name}_force_torque_sensor_broadcaster/wrench',
@@ -132,19 +140,47 @@ class EEAdmittance(Node):
         return response
 
     def set_status(self, request, response):
-        self.active = request.active
-        self.update_rate = request.update_rate
+        active = request.active
+        self.fx_on = active[0]
+        self.fy_on = active[1]
+        self.fz_on = active[2]
+        self.tx_on = active[3]
+        self.ty_on = active[4]
+        self.tz_on = active[5]
         response.message = True
+        return response
+
+    def send_force_torque(self, request, response):
+        response.ft = [self.fx, self.fy, self.fz, self.tx, self.ty, self.tz]
         return response
 
     def wrench_cb(self, msg: WrenchStamped):
         # Extract force and torque
-        fx = msg.wrench.force.x
-        fy = msg.wrench.force.y
-        fz = msg.wrench.force.z
-        tx = msg.wrench.torque.x
-        ty = msg.wrench.torque.y
-        tz = msg.wrench.torque.z
+        self.fx = msg.wrench.force.x
+        self.fy = msg.wrench.force.y
+        self.fz = msg.wrench.force.z
+        self.tx = msg.wrench.torque.x
+        self.ty = msg.wrench.torque.y
+        self.tz = msg.wrench.torque.z
+        fx = self.fx
+        fy = self.fy
+        fz = self.fz
+        tx = self.tx
+        ty = self.ty
+        tz = self.tz
+        if self.fx < 1 and self.fx > -1 or not self.fx_on:
+            fx = 0
+        if self.fy < 1 and self.fy > -1 or not self.fy_on:
+            fy = 0
+        if self.fz < 1 and self.fz > -1 or not self.fz_on:
+            fz = 0
+        if self.tx < 0.1 and self.tx > -0.1 or not self.tx_on:
+            tx = 0
+        if self.ty < 0.1 and self.ty > -0.1 or not self.ty_on:
+            ty = 0
+        if self.tz < 0.1 and self.tz > -0.1 or not self.tz_on:
+            tz = 0
+
         # Store as numpy vector for admittance law
         FT_vector = np.array([fx, fy, fz, tx, ty, tz])
         # self.get_logger().info(f"Force {fx, fy, fz}, Torque: {tx, ty, tz}")
@@ -205,10 +241,7 @@ class EEAdmittance(Node):
         # based on admittance control.
         T_delta = self.get_TM_displacement()
         T_goal = self.get_TM_goal()
-        if self.active == True:
-            T_current = T_goal @ T_delta
-        else:
-            T_current = T_goal
+        T_current = T_goal @ T_delta
         return T_current
 
     def convert_TM_to_pose(self):
