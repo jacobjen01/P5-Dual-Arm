@@ -44,10 +44,10 @@ class ProgramExecutor(Node):
 
         self.load_program_json_service = self.create_service(LoadProgram, 'program_executor/load_raw_JSON',
                                                         self.load_raw_json_callback)
-        
+
         self.run_program_service = self.create_service(RunProgram, 'program_executor/run_program',
                                                        self.run_program_callback)
-        
+
         self.command_state_subscriber = self.create_subscription(CommandState,
                                                             "p5_command_state",
                                                             self.get_command_state, 10)
