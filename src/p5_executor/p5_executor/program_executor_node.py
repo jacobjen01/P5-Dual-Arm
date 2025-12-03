@@ -22,7 +22,7 @@ class ProgramExecutor(Node):
 
         self.JSON_PATH = "config/programs.json"
         self.UPDATE_RATE = 100
-        self.THREAD_UPDATE_RATE =  (self.UPDATE_RATE - 1) / 3
+        self.THREAD_UPDATE_RATE = (self.UPDATE_RATE - 1) / 3
         self.LOOKUP = {
             "c_move": self._command_c_move,
             "r_move": self._command_r_move,
@@ -43,19 +43,19 @@ class ProgramExecutor(Node):
                                                         self.load_program_callback)
 
         self.load_program_json_service = self.create_service(LoadProgram, 'program_executor/load_raw_JSON',
-                                                        self.load_raw_json_callback)
-        
+                                                             self.load_raw_json_callback)
+
         self.run_program_service = self.create_service(RunProgram, 'program_executor/run_program',
                                                        self.run_program_callback)
-        
+
         self.command_state_subscriber = self.create_subscription(CommandState,
-                                                            "p5_command_state",
-                                                            self.get_command_state, 10)
+                                                                 "p5_command_state",
+                                                                 self.get_command_state, 10)
 
-        self.service_call_timer = self.create_timer(1/self.UPDATE_RATE, self.service_call_timer_callback)
+        self.service_call_timer = self.create_timer(1 / self.UPDATE_RATE, self.service_call_timer_callback)
 
-        self.cache = {} # Stores temporary values which multiple threads require access to.
-        self.service_call_list = [] #Stores service calls for the system to call. Format is in a list {"client", "req", "cache_id"}
+        self.cache = {}  # Stores temporary values which multiple threads require access to.
+        self.service_call_list = []  # Stores service calls for the system to call. Format is in a list {"client", "req", "cache_id"}
         self.feedback = {}
         self.threads = []
 
@@ -129,7 +129,7 @@ class ProgramExecutor(Node):
             args = command['args']
             if command_name in self.LOOKUP:
                 self.get_logger().info(f'Robot {robot_name}, command {command_name}, args {args}')
-                self.LOOKUP[command_name](name, robot_name, args) # Runs a function defined in self.LOOKUP.
+                self.LOOKUP[command_name](name, robot_name, args)  # Runs a function defined in self.LOOKUP.
 
     def _add_service_call(self, client, req, cache_id):
         self.cache[cache_id] = None
@@ -156,7 +156,8 @@ class ProgramExecutor(Node):
     def _command_c_move(self, name, robot_name, args):
 
         config_name = args['config_name']
-        self._switch_controller(f'{robot_name}_scaled_joint_trajectory_controller', f'{robot_name}_forward_position_controller')
+        self._switch_controller(f'{robot_name}_scaled_joint_trajectory_controller',
+                                f'{robot_name}_forward_position_controller')
         client, req = self._get_client_and_request(MoveToPreDefPose, 'p5_move_to_pre_def_pose')
 
         req.robot_name = robot_name
@@ -174,7 +175,8 @@ class ProgramExecutor(Node):
         linear = args['linear']
         use_tracking_velocity = args['use_tracking_velocity']
         frame = args['frame']
-        self._switch_controller(f'{robot_name}_forward_position_controller', f'{robot_name}_scaled_joint_trajectory_controller')
+        self._switch_controller(f'{robot_name}_forward_position_controller',
+                                f'{robot_name}_scaled_joint_trajectory_controller')
 
         client = self.create_client(ServoCommandType, f'{robot_name}/servo_node/switch_command_type')
 
@@ -216,7 +218,8 @@ class ProgramExecutor(Node):
         linear = args['linear']
         use_tracking_velocity = args['use_tracking_velocity']
         frame = args['frame']
-        self._switch_controller(f'{robot_name}_forward_position_controller', f'{robot_name}_scaled_joint_trajectory_controller')
+        self._switch_controller(f'{robot_name}_forward_position_controller',
+                                f'{robot_name}_scaled_joint_trajectory_controller')
 
         client = self.create_client(ServoCommandType, f'{robot_name}/servo_node/switch_command_type')
 
@@ -252,11 +255,13 @@ class ProgramExecutor(Node):
             response = self._add_service_call(client, req, f"{robot_name}/_rf_move_get_force")
             self.get_logger().info(f'{abs(response.ft[0])}, {abs(response.ft[1])}, {abs(response.ft[2])}')
 
-            if goal_foce[0] < abs(response.ft[0]) and goal_foce[1] < abs(response.ft[1]) and goal_foce[2] < abs(response.ft[2]):
+            if goal_foce[0] < abs(response.ft[0]) and goal_foce[1] < abs(response.ft[1]) and goal_foce[2] < abs(
+                    response.ft[2]):
                 break
 
         self.get_logger().info('force reached')
-        self._switch_controller(f'{robot_name}_scaled_joint_trajectory_controller', f'{robot_name}_forward_position_controller')
+        self._switch_controller(f'{robot_name}_scaled_joint_trajectory_controller',
+                                f'{robot_name}_forward_position_controller')
 
     def _command_synchronize(self, name, robot_name, args):
         cache_id = f"sync_{args["sync_id"]}"
@@ -341,11 +346,11 @@ def main(args=None):
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
-    #executor = rclpy.executors.MultiThreadedExecutor()
-    #executor.add_node(node)
-    #try:
+    # executor = rclpy.executors.MultiThreadedExecutor()
+    # executor.add_node(node)
+    # try:
     #    executor.spin()
-    #finally:
+    # finally:
     #    node.destroy_node()
     #    rclpy.shutdown()
 
