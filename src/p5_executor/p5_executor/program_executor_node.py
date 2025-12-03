@@ -21,7 +21,8 @@ class ProgramExecutor(Node):
         super().__init__('program_executor')
 
         self.JSON_PATH = "config/programs.json"
-        self.SLEEP_TIME = 0.005
+        self.UPDATE_RATE = 100
+        self.THREAD_UPDATE_RATE =  (self.UPDATE_RATE - 1) / 3
         self.LOOKUP = {
             "c_move": self._command_c_move,
             "r_move": self._command_r_move,
@@ -51,7 +52,10 @@ class ProgramExecutor(Node):
                                                             "p5_command_state",
                                                             self.get_command_state, 10)
 
+        self.service_call_timer = self.create_timer(1/self.UPDATE_RATE, self.service_call_timer_callback)
+
         self.cache = {} # Stores temporary values which multiple threads require access to.
+        self.service_call_list = [] #Stores service calls for the system to call. Format is in a list {"client", "req", "cache_id"}
         self.feedback = {}
         self.threads = []
 
@@ -103,16 +107,17 @@ class ProgramExecutor(Node):
         response.resp = True
         return response
 
-    def switch_controller(self, controller_activate, controller_deactivate):
-        client, req = self._get_client_and_request(SwitchController, '/controller_manager/switch_controller')
+    def service_call_timer_callback(self):
+        if len(self.service_call_list) > 0:
+            call = self.service_call_list.pop(0)
+            client = call["client"]
+            req = call["request"]
+            cache_id = call["cache_id"]
 
-        req.deactivate_controllers = [controller_deactivate]
-        req.activate_controllers = [controller_activate]
-        req.strictness = 2  # Use STRICT
-        req.activate_asap = True  # Activate the new controller as soon as possible
+            future = client.call_async(req)
+            self.executor.spin_until_future_complete(future)
 
-        future = client.call_async(req)
-        self.executor.spin_until_future_complete(future)
+            self.cache[cache_id] = future.result()
 
     def _run_program_thread(self, thread_data):
         name = thread_data['name']
@@ -126,17 +131,39 @@ class ProgramExecutor(Node):
                 self.get_logger().info(f'Robot {robot_name}, command {command_name}, args {args}')
                 self.LOOKUP[command_name](name, robot_name, args) # Runs a function defined in self.LOOKUP.
 
+    def _add_service_call(self, client, req, cache_id):
+        self.cache[cache_id] = None
+        self.service_call_list.append({"client": client, "request": req, "cache_id": cache_id})
+        while True:
+            if self.cache[cache_id] is None:
+                time.sleep(1 / self.THREAD_UPDATE_RATE)
+                continue
+
+            break
+
+        return self.cache[cache_id]
+
+    def _switch_controller(self, controller_activate, controller_deactivate):
+        client, req = self._get_client_and_request(SwitchController, '/controller_manager/switch_controller')
+
+        req.deactivate_controllers = [controller_deactivate]
+        req.activate_controllers = [controller_activate]
+        req.strictness = 2  # Use STRICT
+        req.activate_asap = True  # Activate the new controller as soon as possible
+
+        self._add_service_call(client, req, f"_switch_controller")
+
     def _command_c_move(self, name, robot_name, args):
 
         config_name = args['config_name']
-        self.switch_controller(f'{robot_name}_scaled_joint_trajectory_controller', f'{robot_name}_forward_position_controller')
+        self._switch_controller(f'{robot_name}_scaled_joint_trajectory_controller', f'{robot_name}_forward_position_controller')
         client, req = self._get_client_and_request(MoveToPreDefPose, 'p5_move_to_pre_def_pose')
 
         req.robot_name = robot_name
         req.goal_name = config_name
 
-        future = client.call_async(req)
-        self.executor.spin_until_future_complete(future)
+        self._add_service_call(client, req, f"{robot_name}/_command_c_move")
+
         while not f'{robot_name}_c_move' in self.feedback:
             continue
         while not self.feedback[f'{robot_name}_c_move']:
@@ -147,18 +174,17 @@ class ProgramExecutor(Node):
         linear = args['linear']
         use_tracking_velocity = args['use_tracking_velocity']
         frame = args['frame']
-        self.switch_controller(f'{robot_name}_forward_position_controller', f'{robot_name}_scaled_joint_trajectory_controller')
+        self._switch_controller(f'{robot_name}_forward_position_controller', f'{robot_name}_scaled_joint_trajectory_controller')
 
-        servo_node_command_client = self.create_client(ServoCommandType, f'{robot_name}/servo_node/switch_command_type')
+        client = self.create_client(ServoCommandType, f'{robot_name}/servo_node/switch_command_type')
 
-        while not servo_node_command_client.wait_for_service(timeout_sec=1.0):
+        while not client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
 
-        cmd_type = ServoCommandType.Request()
-        cmd_type.command_type = 2
+        req = ServoCommandType.Request()
+        req.command_type = 2
 
-        future = servo_node_command_client.call_async(cmd_type)
-        self.executor.spin_until_future_complete(future)
+        self._add_service_call(client, req, f"{robot_name}/_servo_enable")
 
         client, req = self._get_client_and_request(MoveToPose, f"{robot_name}/p5_move_to_pose")
 
@@ -174,15 +200,13 @@ class ProgramExecutor(Node):
         req.use_tracking_velocity = use_tracking_velocity
         req.frame = frame
 
-        future = client.call_async(req)
-        self.executor.spin_until_future_complete(future)
+        self._add_service_call(client, req, f"{robot_name}/_r_move_start")
         time.sleep(0.2)
+
         client, req = self._get_client_and_request(GetStatus, f"{robot_name}/p5_relative_mover_status")
+
         while True:
-            future = client.call_async(req)
-            self.executor.spin_until_future_complete(future)
-            time.sleep(0.2)
-            response = future.result()
+            response = self._add_service_call(client, req, f"{robot_name}/_r_move_get_status")
             if response.running:
                 break
 
@@ -192,18 +216,17 @@ class ProgramExecutor(Node):
         linear = args['linear']
         use_tracking_velocity = args['use_tracking_velocity']
         frame = args['frame']
-        self.switch_controller(f'{robot_name}_forward_position_controller', f'{robot_name}_scaled_joint_trajectory_controller')
+        self._switch_controller(f'{robot_name}_forward_position_controller', f'{robot_name}_scaled_joint_trajectory_controller')
 
-        servo_node_command_client = self.create_client(ServoCommandType, f'{robot_name}/servo_node/switch_command_type')
+        client = self.create_client(ServoCommandType, f'{robot_name}/servo_node/switch_command_type')
 
-        while not servo_node_command_client.wait_for_service(timeout_sec=1.0):
+        while not client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
 
-        cmd_type = ServoCommandType.Request()
-        cmd_type.command_type = 2
+        req = ServoCommandType.Request()
+        req.command_type = 2
 
-        future = servo_node_command_client.call_async(cmd_type)
-        self.executor.spin_until_future_complete(future)
+        self._add_service_call(client, req, f"{robot_name}/_servo_enable")
 
         client, req = self._get_client_and_request(MoveToPose, f"{robot_name}/p5_move_to_pose")
 
@@ -219,20 +242,21 @@ class ProgramExecutor(Node):
         req.use_tracking_velocity = use_tracking_velocity
         req.frame = frame
 
-        future = client.call_async(req)
-        self.executor.spin_until_future_complete(future)
+        self._add_service_call(client, req, f"{robot_name}/_rf_move_start")
+
         time.sleep(0.2)
+
         client, req = self._get_client_and_request(AdmittanceSendData, f"{robot_name}/p5_admittance_get_force_torque")
+
         while True:
-            future = client.call_async(req)
-            self.executor.spin_until_future_complete(future)
-            response = future.result()
-            time.sleep(1)
+            response = self._add_service_call(client, req, f"{robot_name}/_rf_move_get_force")
             self.get_logger().info(f'{abs(response.ft[0])}, {abs(response.ft[1])}, {abs(response.ft[2])}')
+
             if goal_foce[0] < abs(response.ft[0]) and goal_foce[1] < abs(response.ft[1]) and goal_foce[2] < abs(response.ft[2]):
                 break
+
         self.get_logger().info('force reached')
-        self.switch_controller(f'{robot_name}_scaled_joint_trajectory_controller', f'{robot_name}_forward_position_controller')
+        self._switch_controller(f'{robot_name}_scaled_joint_trajectory_controller', f'{robot_name}_forward_position_controller')
 
     def _command_synchronize(self, name, robot_name, args):
         cache_id = f"sync_{args["sync_id"]}"
@@ -269,8 +293,7 @@ class ProgramExecutor(Node):
         if state == 'close':
             req.state = 1.0
 
-        future = client.call_async(req)
-        self.executor.spin_until_future_complete(future)
+        self._add_service_call(client, req, f"{robot_name}/_grip_io16")
 
         client, req = self._get_client_and_request(SetIO, f'/{robot_name}_io_and_status_controller/set_io')
 
@@ -280,8 +303,7 @@ class ProgramExecutor(Node):
         if state == 'open':
             req.state = 1.0
 
-        future = client.call_async(req)
-        self.executor.spin_until_future_complete(future)
+        self._add_service_call(client, req, f"{robot_name}/_grip_io17")
 
     def _command_admittance(self, name, robot_name, args):
         param_name = args['parameters_name']
@@ -289,20 +311,17 @@ class ProgramExecutor(Node):
 
         client, req = self._get_client_and_request(LoadAdmittanceParam, f'{robot_name}/p5_load_admittance_param')
         req.param_name = param_name
-        future = client.call_async(req)
-        self.executor.spin_until_future_complete(future)
+
+        self._add_service_call(client, req, f"{robot_name}/_load_admittance_param")
 
         client, req = self._get_client_and_request(AdmittanceSetStatus, f'{robot_name}/p5_admittance_set_state')
         req.active = action
-        future = client.call_async(req)
-        self.executor.spin_until_future_complete(future)
+        self._add_service_call(client, req, f"{robot_name}/_execute_admittance")
 
     def _command_delay(self, name, robot_name, args):
         delay_time = args['time']
-        end_time = time.time() + delay_time
         self.get_logger().info('timer started')
-        while time.time() <= end_time:
-            continue
+        time.sleep(delay_time)
         self.get_logger().info('timer ended')
 
     def _get_client_and_request(self, datatype, service):
