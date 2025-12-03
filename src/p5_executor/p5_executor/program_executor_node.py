@@ -2,7 +2,6 @@ import rclpy
 import json
 import time
 import threading
-import asyncio
 
 from rclpy.node import Node
 from tf2_ros import Buffer, TransformListener
@@ -10,6 +9,7 @@ from ur_msgs.srv import SetIO
 from p5_safety._error_handling import ErrorHandler
 from moveit_msgs.srv import ServoCommandType
 from controller_manager_msgs.srv import SwitchController
+from rclpy.duration import Duration
 
 from p5_interfaces.srv import LoadProgram, RunProgram, MoveToPose, MoveToPreDefPose, GetStatus
 from p5_interfaces.srv import AdmittanceSendData, AdmittanceSetStatus, LoadAdmittanceParam
@@ -176,12 +176,10 @@ class ProgramExecutor(Node):
 
         future = client.call_async(req)
         self.executor.spin_until_future_complete(future)
-        time.sleep(0.2)
         client, req = self._get_client_and_request(GetStatus, f"{robot_name}/p5_relative_mover_status")
         while True:
             future = client.call_async(req)
             self.executor.spin_until_future_complete(future)
-            time.sleep(0.2)
             response = future.result()
             if response.running:
                 break
@@ -221,13 +219,11 @@ class ProgramExecutor(Node):
 
         future = client.call_async(req)
         self.executor.spin_until_future_complete(future)
-        time.sleep(0.2)
         client, req = self._get_client_and_request(AdmittanceSendData, f"{robot_name}/p5_admittance_get_force_torque")
         while True:
             future = client.call_async(req)
             self.executor.spin_until_future_complete(future)
             response = future.result()
-            time.sleep(1)
             self.get_logger().info(f'{abs(response.ft[0])}, {abs(response.ft[1])}, {abs(response.ft[2])}')
             if goal_foce[0] < abs(response.ft[0]) and goal_foce[1] < abs(response.ft[1]) and goal_foce[2] < abs(response.ft[2]):
                 break
@@ -301,8 +297,7 @@ class ProgramExecutor(Node):
         delay_time = args['time']
         end_time = time.time() + delay_time
         self.get_logger().info('timer started')
-        while time.time() <= end_time:
-            continue
+        self.get_clock().sleep_for(Duration(seconds=delay_time))
         self.get_logger().info('timer ended')
 
     def _get_client_and_request(self, datatype, service):
