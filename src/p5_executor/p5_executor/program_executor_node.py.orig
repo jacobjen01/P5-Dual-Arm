@@ -2,7 +2,6 @@ import rclpy
 import json
 import time
 import threading
-import asyncio
 
 from rclpy.node import Node
 from tf2_ros import Buffer, TransformListener
@@ -10,6 +9,7 @@ from ur_msgs.srv import SetIO
 from p5_safety._error_handling import ErrorHandler
 from moveit_msgs.srv import ServoCommandType
 from controller_manager_msgs.srv import SwitchController
+from rclpy.duration import Duration
 
 from p5_interfaces.srv import LoadProgram, RunProgram, MoveToPose, MoveToPreDefPose, GetStatus
 from p5_interfaces.srv import AdmittanceSendData, AdmittanceSetStatus, LoadAdmittanceParam
@@ -200,13 +200,24 @@ class ProgramExecutor(Node):
         req.use_tracking_velocity = use_tracking_velocity
         req.frame = frame
 
+<<<<<<< HEAD
+        future = client.call_async(req)
+        self.executor.spin_until_future_complete(future)
+=======
         self._add_service_call(client, req, f"{robot_name}/_r_move_start")
         time.sleep(0.2)
 
+>>>>>>> 962f1e9b2b1f0a79b096348452aca25c6e5b3387
         client, req = self._get_client_and_request(GetStatus, f"{robot_name}/p5_relative_mover_status")
 
         while True:
+<<<<<<< HEAD
+            future = client.call_async(req)
+            self.executor.spin_until_future_complete(future)
+            response = future.result()
+=======
             response = self._add_service_call(client, req, f"{robot_name}/_r_move_get_status")
+>>>>>>> 962f1e9b2b1f0a79b096348452aca25c6e5b3387
             if response.running:
                 break
 
@@ -242,14 +253,25 @@ class ProgramExecutor(Node):
         req.use_tracking_velocity = use_tracking_velocity
         req.frame = frame
 
+<<<<<<< HEAD
+        future = client.call_async(req)
+        self.executor.spin_until_future_complete(future)
+=======
         self._add_service_call(client, req, f"{robot_name}/_rf_move_start")
 
         time.sleep(0.2)
 
+>>>>>>> 962f1e9b2b1f0a79b096348452aca25c6e5b3387
         client, req = self._get_client_and_request(AdmittanceSendData, f"{robot_name}/p5_admittance_get_force_torque")
 
         while True:
+<<<<<<< HEAD
+            future = client.call_async(req)
+            self.executor.spin_until_future_complete(future)
+            response = future.result()
+=======
             response = self._add_service_call(client, req, f"{robot_name}/_rf_move_get_force")
+>>>>>>> 962f1e9b2b1f0a79b096348452aca25c6e5b3387
             self.get_logger().info(f'{abs(response.ft[0])}, {abs(response.ft[1])}, {abs(response.ft[2])}')
 
             if goal_foce[0] < abs(response.ft[0]) and goal_foce[1] < abs(response.ft[1]) and goal_foce[2] < abs(response.ft[2]):
@@ -321,7 +343,11 @@ class ProgramExecutor(Node):
     def _command_delay(self, name, robot_name, args):
         delay_time = args['time']
         self.get_logger().info('timer started')
+<<<<<<< HEAD
+        self.get_clock().sleep_for(Duration(seconds=delay_time))
+=======
         time.sleep(delay_time)
+>>>>>>> 962f1e9b2b1f0a79b096348452aca25c6e5b3387
         self.get_logger().info('timer ended')
 
     def _get_client_and_request(self, datatype, service):
@@ -350,5 +376,5 @@ def main(args=None):
     #    rclpy.shutdown()
 
 
-if _name_ == '_main_':
+if __name__ == '__main__':
     main()
