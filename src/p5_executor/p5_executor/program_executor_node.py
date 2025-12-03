@@ -1,17 +1,18 @@
 import rclpy
-import numpy as np
 import json
 import time
 import threading
+import asyncio
 
 from rclpy.node import Node
-from tf2_ros import TransformBroadcaster, Buffer, TransformListener
+from tf2_ros import Buffer, TransformListener
 from ur_msgs.srv import SetIO
 from p5_safety._error_handling import ErrorHandler
 from moveit_msgs.srv import ServoCommandType
 from controller_manager_msgs.srv import SwitchController
 
-from p5_interfaces.srv import LoadProgram, RunProgram, MoveToPose, MoveToPreDefPose, AdmittanceSetStatus, GetStatus, StopRelativeMover, AdmittanceSendData, LoadRawJSON
+from p5_interfaces.srv import LoadProgram, RunProgram, MoveToPose, MoveToPreDefPose, GetStatus
+from p5_interfaces.srv import AdmittanceSendData, AdmittanceSetStatus, LoadAdmittanceParam
 from p5_interfaces.msg import CommandState
 
 
@@ -29,6 +30,7 @@ class ProgramExecutor(Node):
             "frame_availability": self._command_frame_availability,
             "grip": self._command_grip,
             "admittance": self._command_admittance,
+            "delay": self._command_delay,
         }
 
         self.error_handler = ErrorHandler(self)
@@ -36,13 +38,13 @@ class ProgramExecutor(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
-        self.load_program_service = self.create_service(LoadProgram, f'program_executor/load_program',
+        self.load_program_service = self.create_service(LoadProgram, 'program_executor/load_program',
                                                         self.load_program_callback)
 
-        self.load_program_json_service = self.create_service(LoadProgram, f'program_executor/load_raw_JSON',
+        self.load_program_json_service = self.create_service(LoadProgram, 'program_executor/load_raw_JSON',
                                                         self.load_raw_json_callback)
         
-        self.run_program_service = self.create_service(RunProgram, f'program_executor/run_program',
+        self.run_program_service = self.create_service(RunProgram, 'program_executor/run_program',
                                                        self.run_program_callback)
         
         self.command_state_subscriber = self.create_subscription(CommandState,
@@ -59,36 +61,36 @@ class ProgramExecutor(Node):
         self.feedback[f'{msg.robot_name}_{msg.cmd}'] = msg.status
 
     def load_program_callback(self, request, response):
-        program_name = request.program_name
+        program_name = request.json_data
 
         with open(self.JSON_PATH, "r") as f:
             programs = json.loads(f.read())
 
         if program_name not in programs:
-            response.resp = False
+            response.success = False
             return response
 
         self.program = programs[program_name]
 
-        response.resp = True
+        response.success = True
         return response
 
     def load_raw_json_callback(self, request, response):
         raw_json = request.json_data
         programs = json.loads(raw_json)
         keys = list(programs.keys())
-
         self.program = programs[keys[0]]
-        
-        response.resp = True
-        return response
+        self.get_logger().info(f'{programs}')
 
+        response.success = True
+        return response
 
     def run_program_callback(self, request, response):
         if self.program is None:
             response.resp = False
             return response
 
+        self.threads = []
         if request.status:
             for thread_data in self.program['threads']:
                 self.threads.append(threading.Thread(target=self._run_program_thread, args=(thread_data,)))
@@ -110,7 +112,7 @@ class ProgramExecutor(Node):
         req.activate_asap = True  # Activate the new controller as soon as possible
 
         future = client.call_async(req)
-        rclpy.spin_until_future_complete(self, future)
+        self.executor.spin_until_future_complete(future)
 
     def _run_program_thread(self, thread_data):
         name = thread_data['name']
@@ -134,7 +136,7 @@ class ProgramExecutor(Node):
         req.goal_name = config_name
 
         future = client.call_async(req)
-        rclpy.spin_until_future_complete(self, future)
+        self.executor.spin_until_future_complete(future)
         while not f'{robot_name}_c_move' in self.feedback:
             continue
         while not self.feedback[f'{robot_name}_c_move']:
@@ -156,7 +158,7 @@ class ProgramExecutor(Node):
         cmd_type.command_type = 2
 
         future = servo_node_command_client.call_async(cmd_type)
-        rclpy.spin_until_future_complete(self, future)
+        self.executor.spin_until_future_complete(future)
 
         client, req = self._get_client_and_request(MoveToPose, f"{robot_name}/p5_move_to_pose")
 
@@ -173,12 +175,12 @@ class ProgramExecutor(Node):
         req.frame = frame
 
         future = client.call_async(req)
-        rclpy.spin_until_future_complete(self, future)
+        self.executor.spin_until_future_complete(future)
         time.sleep(0.2)
         client, req = self._get_client_and_request(GetStatus, f"{robot_name}/p5_relative_mover_status")
         while True:
             future = client.call_async(req)
-            rclpy.spin_until_future_complete(self, future)
+            self.executor.spin_until_future_complete(future)
             time.sleep(0.2)
             response = future.result()
             if response.running:
@@ -201,7 +203,7 @@ class ProgramExecutor(Node):
         cmd_type.command_type = 2
 
         future = servo_node_command_client.call_async(cmd_type)
-        rclpy.spin_until_future_complete(self, future)
+        self.executor.spin_until_future_complete(future)
 
         client, req = self._get_client_and_request(MoveToPose, f"{robot_name}/p5_move_to_pose")
 
@@ -218,18 +220,12 @@ class ProgramExecutor(Node):
         req.frame = frame
 
         future = client.call_async(req)
-        rclpy.spin_until_future_complete(self, future)
+        self.executor.spin_until_future_complete(future)
         time.sleep(0.2)
-        #client, req = self._get_client_and_request(GetStatus, f"{robot_name}/p5_relative_mover_status")
         client, req = self._get_client_and_request(AdmittanceSendData, f"{robot_name}/p5_admittance_get_force_torque")
         while True:
-            #future = client.call_async(req)
-            #rclpy.spin_until_future_complete(self, future)
-            #response = future.result()
-            #if response.running:
-                #break
             future = client.call_async(req)
-            rclpy.spin_until_future_complete(self, future)
+            self.executor.spin_until_future_complete(future)
             response = future.result()
             time.sleep(1)
             self.get_logger().info(f'{abs(response.ft[0])}, {abs(response.ft[1])}, {abs(response.ft[2])}')
@@ -270,32 +266,44 @@ class ProgramExecutor(Node):
         req.fun = 1
         req.pin = 16
         req.state = 0.0
-        if state:
+        if state == 'close':
             req.state = 1.0
 
         future = client.call_async(req)
-        rclpy.spin_until_future_complete(self, future)
+        self.executor.spin_until_future_complete(future)
 
         client, req = self._get_client_and_request(SetIO, f'/{robot_name}_io_and_status_controller/set_io')
 
         req.fun = 1
         req.pin = 17
-        req.state = 1.0
-        if state:
-            req.state = 0.0
+        req.state = 0.0
+        if state == 'open':
+            req.state = 1.0
 
         future = client.call_async(req)
-        rclpy.spin_until_future_complete(self, future)
+        self.executor.spin_until_future_complete(future)
 
     def _command_admittance(self, name, robot_name, args):
+        param_name = args['parameters_name']
         action = [args['fx'], args['fy'], args['fz'], args['tx'], args['ty'], args['tz']]
 
-        client, req = self._get_client_and_request(AdmittanceSetStatus, f'{robot_name}/p5_admittance_set_state')
-
-        req.active = action
-
+        client, req = self._get_client_and_request(LoadAdmittanceParam, f'{robot_name}/p5_load_admittance_param')
+        req.param_name = param_name
         future = client.call_async(req)
-        rclpy.spin_until_future_complete(self, future)
+        self.executor.spin_until_future_complete(future)
+
+        client, req = self._get_client_and_request(AdmittanceSetStatus, f'{robot_name}/p5_admittance_set_state')
+        req.active = action
+        future = client.call_async(req)
+        self.executor.spin_until_future_complete(future)
+
+    def _command_delay(self, name, robot_name, args):
+        delay_time = args['time']
+        end_time = time.time() + delay_time
+        self.get_logger().info('timer started')
+        while time.time() <= end_time:
+            continue
+        self.get_logger().info('timer ended')
 
     def _get_client_and_request(self, datatype, service):
         client = self.create_client(datatype, service)
@@ -314,6 +322,13 @@ def main(args=None):
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
+    #executor = rclpy.executors.MultiThreadedExecutor()
+    #executor.add_node(node)
+    #try:
+    #    executor.spin()
+    #finally:
+    #    node.destroy_node()
+    #    rclpy.shutdown()
 
 
 if __name__ == '__main__':

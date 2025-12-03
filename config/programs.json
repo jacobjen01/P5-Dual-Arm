@@ -95,10 +95,19 @@
         "commands": [
           {
             "command": "grip",
-            "args": {"action": true}
+            "args": {"action": "close"}
           }, {
 			"command": "admittance",
-			"args": {"action": [false, false, false, false, false, false]}
+			"args": 
+				{
+					"parameters_name": "default",
+					"fx": false,
+					"fy": false,
+					"fz": false,
+					"tx": false,
+					"ty": false,
+					"tz": false
+				}
 		  }, {
 			"command": "sync",
 			"args": {"sync_id": "y", "threads": ["alice_thread", "bob_thread"]}
@@ -110,7 +119,16 @@
 			"args": {"sync_id": "x", "threads": ["alice_thread", "bob_thread"]}
 		  }, {
 			"command": "admittance",
-			"args": {"action": [false, false, false, false, false, false]}
+			"args": 
+				{
+					"parameters_name": "default",
+					"fx": false,
+					"fy": false,
+					"fz": false,
+					"tx": false,
+					"ty": false,
+					"tz": false
+				}
 		  }, {
             "command": "r_move",
             "args": {"frame": "alice_base_link", "linear": false, "use_tracking_velocity": false, "pose": [-0.354, 0.15, 0.096, -0.311, 0.856, -0.160, -0.380]}
@@ -122,10 +140,19 @@
 		"commands": [
           {
             "command": "grip",
-            "args": {"action": true}
+            "args": {"action": "close"}
           }, {
 			"command": "admittance",
-			"args": {"action": [false, false, false, false, false, false]}
+			"args": 
+				{
+					"parameters_name": "default",
+					"fx": false,
+					"fy": false,
+					"fz": false,
+					"tx": false,
+					"ty": false,
+					"tz": false
+				}	
 		  }, {
             "command": "c_move",
             "args": {"config_name": "BOB_HOME"}
@@ -143,14 +170,41 @@
             "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.05, 0.004, 0.287, 1.0, 0.0, 0.0, 0.0]}
 		  }, {
 			"command": "admittance",
-			"args": {"action": [true, true, true, false, false, false]}
+			"args": 
+				{
+					"parameters_name": "BOB_BUILD_LEGO",
+					"fx": true,
+					"fy": true,
+					"fz": true,
+					"tx": false,
+					"ty": false,
+					"tz": false
+				}
 		  }, {
             "command": "r_move_fe",
             "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.01, 0.004, 0.287, 1.0, 0.0, 0.0, 0.0], "force": [4.0, 0.0, 0.0, 0.0, 0.0, 0.0]}
 		  }, {
+			"command": "delay",
+			"args": {"time": 60}
+		  }, {
             "command": "grip",
-            "args": {"action": false}
+            "args": {"action": "open"}
           }, {
+			"command": "admittance",
+			"args": 
+				{
+					"parameters_name": "default",
+					"fx": false,
+					"fy": false,
+					"fz": false,
+					"tx": false,
+					"ty": false,
+					"tz": false
+				}	
+		  }, {
+			"command": "delay",
+			"args": {"time": 2}
+		  }, {
             "command": "r_move",
             "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.05, 0.004, 0.287, 1.0, 0.0, 0.0, 0.0]}
 		  }

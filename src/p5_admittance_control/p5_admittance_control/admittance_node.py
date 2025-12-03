@@ -19,7 +19,7 @@ from p5_interfaces.srv import AdmittanceConfig
 from p5_interfaces.srv import SaveAdmittanceParam
 import json
 
-from p5_interfaces.srv import AdmittanceShowStatus, AdmittanceSetStatus, AdmittanceSendData
+from p5_interfaces.srv import AdmittanceShowStatus, AdmittanceSetStatus, AdmittanceSendData, LoadAdmittanceParam
 
 
 class EEAdmittance(Node):
@@ -51,6 +51,10 @@ class EEAdmittance(Node):
             AdmittanceSendData,
             'p5_admittance_get_force_torque',
             self.send_force_torque)
+        self.load_admittance_param = self.create_service(
+            LoadAdmittanceParam,
+            'p5_load_admittance_param',
+            self.load_param)
 
         # Load parameters
         try:
@@ -111,7 +115,7 @@ class EEAdmittance(Node):
 
     def save_param(self, request, response):
         try:
-            with open("admittance_param.json", "r") as f:
+            with open("config/admittance_param.json", "r") as f:
                 data = json.load(f)
         except BaseException:
             data = {}
@@ -122,11 +126,24 @@ class EEAdmittance(Node):
             "alpha": self.alpha
         }
         json_str = json.dumps(data, indent=4)
-        with open("admittance_param.json", "w") as f:
+        with open("config/admittance_param.json", "w") as f:
             f.write(json_str)
 
         response.message = True
 
+        return response
+
+    def load_param(self, request, response):
+        try:
+            with open("config/admittance_param.json", "r") as f:
+                data = json.load(f)
+            self.M = np.diag(data[request.param_name]["M"])
+            self.D = np.diag(data[request.param_name]["D"])
+            self.K = np.diag(data[request.param_name]["K"])
+            response.success = True
+        except BaseException:
+            self.get_logger().warn("can't load admittance parameters from config/admittance_param.json")
+            response.success = False
         return response
 
     def show_status(self, request, response):
