@@ -66,10 +66,14 @@ To verify that the display is working, enter the container and test:
 ```bash
 docker exec -it p5-dual-arm-dual-arm-1 bash
 xeyes
+colcon build
 ```
 This should show a pair of eyes. Press Ctrl+C to close it again.
 
-
+### 5. From now on a script can be used to make a container
+```bash
+./make_container.sh
+```
 
 ## Robot control
 ### Launch the controller
