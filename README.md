@@ -10,7 +10,40 @@ create ssh connection for the jetson with our study group number:
 ssh -X gr141@192.168.56.2 
 ```
 
-Kode til Jetson: gr141
+Kode til pc: gr141
+
+Password login should be turned off so if you have not yet set up ssh with a key for your pc do this:
+
+Minipc:
+```bash
+sudo nano /etc/ssh/sshd_config
+```
+Remove the # in 
+```bash
+PasswordAuthentication yes
+```
+
+On your system:
+Check if you have a pubkey. Should have this written in it somewhere: ed25519
+```bash
+ls .ssh 
+```
+If you do ignore this step but if you do not:
+```bash
+ssh-keygen -t ed25519
+```
+
+then
+```bash
+ssh-copy-id gr141@192.168.56.2
+```
+And write the password.
+IMPORTANT: Go back in the config and comment out PasswordAuthentication yes
+
+Now you can remote into the minipc with
+```bash
+ssh -X gr141@192.168.56.2 
+```
 
 ## Prerequisites
 This system is designed for Linux only and requires Docker with Compose v2.
