@@ -1,5 +1,5 @@
 # P5-Dual-Arm
-Semester project P5 gruppe 141 AAU Dual Arm Beer Buddy
+Semester project P5 gruppe 141 AAU Dual Arm
 
 ##Connection to the system
 Connect to the router TPLINK -2.4 GHz(password is 29171798), add manual addresses to the settings:
@@ -28,7 +28,7 @@ Check if you have a pubkey. Should have this written in it somewhere: ed25519
 ```bash
 ls .ssh 
 ```
-If you do ignore this step but if you do not:
+If you do, then ignore this step, but if you do not:
 ```bash
 ssh-keygen -t ed25519
 ```
