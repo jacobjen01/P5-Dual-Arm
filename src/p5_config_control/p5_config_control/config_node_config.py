@@ -4,7 +4,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 
-from p5_interfaces.srv import PoseConfig
+from p5_interfaces.srv import PoseConfig, SendJsonData
 
 
 class PoseConfigListener(Node):
@@ -14,7 +14,19 @@ class PoseConfigListener(Node):
         self.bob = [0, 0, 0, 0, 0, 0]
         self.alice = [0, 0, 0, 0, 0, 0]
         self.srv = self.create_service(PoseConfig, '/p5_pose_config', self.change_pose)
+        self.srv2 = self.create_service(SendJsonData, '/p5_send_pose_configs', self.send_pose_configs)
         self.joint_values = self.create_subscription(JointState, '/joint_states', self.get_joint_val, 10)
+
+    def send_pose_configs(self, request, response):
+        try:
+            with open("config/pre_config_poses.json", "r") as f:
+                data = f.read()
+        except:
+            response.data = ""
+            response.success = False
+        response.data = data
+        response.success = True
+        return response
 
     def change_pose(self, request, response):
         if self.bob == [0, 0, 0, 0, 0, 0] or self.alice == [0, 0, 0, 0, 0, 0]:

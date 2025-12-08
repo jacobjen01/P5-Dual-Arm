@@ -100,7 +100,7 @@
 			"command": "admittance",
 			"args": 
 				{
-					"parameters_name": "default",
+					"parameter_name": "default",
 					"fx": false,
 					"fy": false,
 					"fz": false,
@@ -121,7 +121,7 @@
 			"command": "admittance",
 			"args": 
 				{
-					"parameters_name": "default",
+					"parameter_name": "default",
 					"fx": false,
 					"fy": false,
 					"fz": false,
@@ -132,7 +132,19 @@
 		  }, {
             "command": "r_move",
             "args": {"frame": "alice_base_link", "linear": false, "use_tracking_velocity": false, "pose": [-0.354, 0.15, 0.096, -0.311, 0.856, -0.160, -0.380]}
-		  }
+		  }, {
+			"command": "sync",
+			"args": {"sync_id": "a", "threads": ["alice_thread", "bob_thread"]}
+		  }, {
+            "command": "grip",
+            "args": {"action": "none"}
+          }, {
+			"command": "sync",
+			"args": {"sync_id": "b", "threads": ["alice_thread", "bob_thread"]}
+		  }, {
+            "command": "grip",
+            "args": {"action": "close"}
+          } 
 		]
 	  }, {
 		"name": "bob_thread",
@@ -145,7 +157,7 @@
 			"command": "admittance",
 			"args": 
 				{
-					"parameters_name": "default",
+					"parameter_name": "default",
 					"fx": false,
 					"fy": false,
 					"fz": false,
@@ -166,13 +178,37 @@
             "command": "c_move",
             "args": {"config_name": "BOB_BI_START"}
           }, {
+			"command": "sync",
+			"args": {"sync_id": "a", "threads": ["alice_thread", "bob_thread"]}
+		  }, {
+            "command": "grip",
+            "args": {"action": "none"}
+          }, {
+            "command": "r_move",
+            "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.0, 0.00, 0.4, -0.707, 0.707, 0.0, 0.0]}
+		  }, {
+            "command": "r_move_fe",
+            "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.0, 0.005, 0.2, -0.707, 0.707, 0.0, 0.0], "force": [0.0, 0.0, 2.0, 0.0, 0.0, 0.0]}
+		  }, {
+            "command": "r_move",
+            "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.0, 0.00, 0.4, -0.707, 0.707, 0.0, 0.0]}
+		  }, {
+			"command": "sync",
+			"args": {"sync_id": "b", "threads": ["alice_thread", "bob_thread"]}
+		  }, {
+            "command": "grip",
+            "args": {"action": "close"}
+          }, {
+            "command": "r_move",
+            "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.05, 0.004, 0.4, 1.0, 0.0, 0.0, 0.0]}
+		  }, {
             "command": "r_move",
             "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.05, 0.004, 0.287, 1.0, 0.0, 0.0, 0.0]}
 		  }, {
 			"command": "admittance",
 			"args": 
 				{
-					"parameters_name": "BOB_BUILD_LEGO",
+					"parameter_name": "BOB_BUILD_LEGO",
 					"fx": true,
 					"fy": true,
 					"fz": true,
@@ -185,23 +221,11 @@
             "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.01, 0.004, 0.287, 1.0, 0.0, 0.0, 0.0], "force": [4.0, 0.0, 0.0, 0.0, 0.0, 0.0]}
 		  }, {
 			"command": "delay",
-			"args": {"time": 60}
+			"args": {"time": 10}
 		  }, {
             "command": "grip",
             "args": {"action": "open"}
           }, {
-			"command": "admittance",
-			"args": 
-				{
-					"parameters_name": "default",
-					"fx": false,
-					"fy": false,
-					"fz": false,
-					"tx": false,
-					"ty": false,
-					"tz": false
-				}	
-		  }, {
 			"command": "delay",
 			"args": {"time": 2}
 		  }, {
@@ -211,5 +235,46 @@
 		]
 	  }
 	]
+  }, "test": {
+    "description": "Test BI manual",
+    "date": "25-11-2025",
+    "author": "Thor",
+    "threads": [
+	  {
+        "name": "alice_thread",
+        "robot_name": "alice",
+        "commands": [
+           
+		]
+	  }, {
+		"name": "bob_thread",
+		"robot_name": "bob",
+		"commands": [
+		  {
+            "command": "r_move",
+            "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.05, 0.004, 0.287, 1.0, 0.0, 0.0, 0.0]}
+		  }, {
+            "command": "r_move_fe",
+            "args": {"frame": "alice_tool0", "linear": false, "use_tracking_velocity": false, "pose": [0.05, 0.004, 0.287, 1.0, 0.0, 0.0, 0.0], "force": [4.0, 0.0, 0.0, 0.0, 0.0, 0.0]}
+		  },{
+			"command": "admittance",
+			"args": 
+				{
+					"parameter_name": "BOB_BUILD_LEGO",
+					"fx": true,
+					"fy": true,
+					"fz": true,
+					"tx": false,
+					"ty": false,
+					"tz": false
+				}
+		  }, {
+			"command": "delay",
+			"args": {"time": 30}
+		  }
+		]
+	  }
+	]
   }
+
 }

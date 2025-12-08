@@ -51,6 +51,15 @@ def generate_launch_description():
             )
         )
     )
+    launch_executor = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('p5_executor'),
+                'launch',
+                'launch_executor.launch.py'
+            )
+        )
+    )
 
     return LaunchDescription([
         launch_safety,
@@ -58,4 +67,5 @@ def generate_launch_description():
         launch_config_controler_node,
         launch_relative_mover,
         launch_camera,
+        launch_executor
     ])

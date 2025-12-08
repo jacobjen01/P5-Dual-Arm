@@ -95,6 +95,7 @@ class ProgramExecutor(Node):
             return response
 
         self.threads = []
+        self.cache = {}
         if request.status:
             for thread_data in self.program['threads']:
                 self.threads.append(threading.Thread(target=self._run_program_thread, args=(thread_data,)))
@@ -115,9 +116,10 @@ class ProgramExecutor(Node):
             cache_id = call["cache_id"]
 
             future = client.call_async(req)
-            self.executor.spin_until_future_complete(future)
+            future.add_done_callback(lambda f: self.cache.__setitem__(cache_id, f.result()))
+            #rclpy.spin_until_future_complete(self, future)
 
-            self.cache[cache_id] = future.result()
+            #self.cache[cache_id] = future.result()
 
     def _run_program_thread(self, thread_data):
         name = thread_data['name']
@@ -132,6 +134,7 @@ class ProgramExecutor(Node):
                 self.LOOKUP[command_name](name, robot_name, args) # Runs a function defined in self.LOOKUP.
 
     def _add_service_call(self, client, req, cache_id):
+        #self.get_logger().info(f'{self.cache[cache_id]}')
         self.cache[cache_id] = None
         self.service_call_list.append({"client": client, "request": req, "cache_id": cache_id})
         while True:
@@ -211,7 +214,7 @@ class ProgramExecutor(Node):
                 break
 
     def _command_r_move_fe(self, name, robot_name, args):
-        goal_foce = args['force']
+        goal_force = args['force']
         pose = args['pose']
         linear = args['linear']
         use_tracking_velocity = args['use_tracking_velocity']
@@ -252,11 +255,8 @@ class ProgramExecutor(Node):
             response = self._add_service_call(client, req, f"{robot_name}/_rf_move_get_force")
             self.get_logger().info(f'{abs(response.ft[0])}, {abs(response.ft[1])}, {abs(response.ft[2])}')
 
-            if goal_foce[0] < abs(response.ft[0]) and goal_foce[1] < abs(response.ft[1]) and goal_foce[2] < abs(response.ft[2]):
+            if all(x < abs(y) for x, y in zip(goal_force, response.ft)):
                 break
-
-        self.get_logger().info('force reached')
-        self._switch_controller(f'{robot_name}_scaled_joint_trajectory_controller', f'{robot_name}_forward_position_controller')
 
     def _command_synchronize(self, name, robot_name, args):
         cache_id = f"sync_{args["sync_id"]}"
@@ -306,7 +306,7 @@ class ProgramExecutor(Node):
         self._add_service_call(client, req, f"{robot_name}/_grip_io17")
 
     def _command_admittance(self, name, robot_name, args):
-        param_name = args['parameters_name']
+        param_name = args['parameter_name']
         action = [args['fx'], args['fy'], args['fz'], args['tx'], args['ty'], args['tz']]
 
         client, req = self._get_client_and_request(LoadAdmittanceParam, f'{robot_name}/p5_load_admittance_param')
