@@ -90,7 +90,7 @@ class JTCClient(rclpy.node.Node):
         point = JointTrajectoryPoint()
         point.positions = TRAJECTORIES[self.goal_name]
         point.velocities = [0, 0, 0, 0, 0, 0]
-        point.time_from_start = Duration(sec=10, nanosec=0)
+        point.time_from_start = Duration(sec=5, nanosec=0)
         self.goal_pose.points.append(point)
 
     def execute_trajectory(self):

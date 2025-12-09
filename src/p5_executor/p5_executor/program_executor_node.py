@@ -11,7 +11,8 @@ from p5_safety._error_handling import ErrorHandler
 from moveit_msgs.srv import ServoCommandType
 from controller_manager_msgs.srv import SwitchController
 
-from p5_interfaces.srv import LoadProgram, RunProgram, MoveToPose, MoveToPreDefPose, GetStatus
+from std_srvs.srv import Trigger
+from p5_interfaces.srv import LoadRawJSON, LoadProgram, RunProgram, MoveToPose, MoveToPreDefPose, GetStatus
 from p5_interfaces.srv import AdmittanceSendData, AdmittanceSetStatus, LoadAdmittanceParam
 from p5_interfaces.msg import CommandState
 
@@ -21,7 +22,7 @@ class ProgramExecutor(Node):
         super().__init__('program_executor')
 
         self.JSON_PATH = "config/programs.json"
-        self.UPDATE_RATE = 100
+        self.UPDATE_RATE = 500
         self.THREAD_UPDATE_RATE =  (self.UPDATE_RATE - 1) / 3
         self.LOOKUP = {
             "c_move": self._command_c_move,
@@ -42,7 +43,7 @@ class ProgramExecutor(Node):
         self.load_program_service = self.create_service(LoadProgram, 'program_executor/load_program',
                                                         self.load_program_callback)
 
-        self.load_program_json_service = self.create_service(LoadProgram, 'program_executor/load_raw_JSON',
+        self.load_program_json_service = self.create_service(LoadRawJSON, 'program_executor/load_raw_JSON',
                                                         self.load_raw_json_callback)
 
         self.run_program_service = self.create_service(RunProgram, 'program_executor/run_program',
@@ -65,7 +66,7 @@ class ProgramExecutor(Node):
         self.feedback[f'{msg.robot_name}_{msg.cmd}'] = msg.status
 
     def load_program_callback(self, request, response):
-        program_name = request.json_data
+        program_name = request.name
 
         with open(self.JSON_PATH, "r") as f:
             programs = json.loads(f.read())
@@ -308,6 +309,9 @@ class ProgramExecutor(Node):
     def _command_admittance(self, name, robot_name, args):
         param_name = args['parameter_name']
         action = [args['fx'], args['fy'], args['fz'], args['tx'], args['ty'], args['tz']]
+
+        client, req = self._get_client_and_request(Trigger, f'{robot_name}_io_and_status_controller/zero_ftsensor')
+        self._add_service_call(client, req, f"{robot_name}/_reset_ft_sensor")
 
         client, req = self._get_client_and_request(LoadAdmittanceParam, f'{robot_name}/p5_load_admittance_param')
         req.param_name = param_name
