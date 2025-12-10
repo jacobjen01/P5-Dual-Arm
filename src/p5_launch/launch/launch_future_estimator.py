@@ -63,7 +63,7 @@ def generate_launch_description():
             namespace='perception',
             executable='future_tag_estimator',
             name='future_tag_estimator_node',
-            parameters=[{'use_averaging': LaunchConfiguration('use_averaging', default='true')}]
+            parameters=[{'use_averaging': LaunchConfiguration('use_averaging')}],
             #output='screen'
         ),
 
