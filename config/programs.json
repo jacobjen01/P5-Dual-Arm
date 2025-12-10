@@ -746,6 +746,47 @@
 		]
 	  }
 	]
+  }, "basic_test": {
+    "description": "Basic_test_of_movement",
+    "date": "09-12-2025",
+    "author": "Rasmus",
+    "threads": [
+      {
+        "name": "alice_thread",
+        "robot_name": "alice",
+        "commands": [
+          {
+            "command": "grip",
+            "args": {"action": "open"}
+          }, {
+			"command": "admittance",
+			"args": 
+				{
+					"parameter_name": "default",
+					"fx": false,
+					"fy": false,
+					"fz": false,
+					"tx": false,
+					"ty": false,
+					"tz": false
+				}
+		  }, {
+            "command": "c_move",
+            "args": {"config_name": "ALICE_HOME"}
+          }, {
+            "command": "c_move",
+            "args": {"config_name": "ALICE_GRIP_READY"}
+          }, {
+            "command": "frame_available",
+            "args": {"frame_name": "tag36h11:0"}
+          }, 
+		  {
+            "command": "r_move",
+            "args": {"frame": "tag36h11:0", "linear": true, "use_tracking_velocity": false, "pose": [0.0, 0.1, 0.125, 0.70711, 0.70711, 0.0, 0.0]}
+          }
+        ]
+      }
+    ]
   }
 
 }

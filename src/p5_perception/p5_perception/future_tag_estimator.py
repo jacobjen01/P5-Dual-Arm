@@ -119,7 +119,6 @@ class FutureTagEstimator(Node):
 
     def tf_callback(self, msg: TFMessage):
         if not msg.transforms:                                              # Hånderer tilfælde med tom TFMessage
-            self.get_logger().warning("Received empty TFMessage")
             #self.tag_history.clear()
             return
 
