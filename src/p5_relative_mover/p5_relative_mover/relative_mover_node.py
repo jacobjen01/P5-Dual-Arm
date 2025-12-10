@@ -100,6 +100,8 @@ class RelativeMover(Node):
             self.ee_pose_rel_base_frame_start_frame = self.ee_pose_rel_base_frame.copy()
             self.ee_pose_rel_base_frame_theoretical = self.ee_pose_rel_base_frame.copy()
 
+            self.goal_pose_velocity = np.array([0.0, 0.0, 0.0])
+            
             if self.timer_move_robot is None:
                 self.timer_create_goal_frame = self.create_timer(1 / self.UPDATE_RATE, self.create_current_goal_frame)
                 self.timer_get_goal_pose_respect_to_base = self.create_timer(1 / self.UPDATE_RATE,
@@ -385,9 +387,9 @@ class RelativeMover(Node):
 
         dt = 1.0 / self.UPDATE_RATE
 
-        if abs(dist_norm) <= 0.5 * vel**2 / self.ACCELERATION:
+        if abs(dist_norm) <= 0.5 * (vel-np.linalg.norm(self.goal_pose_velocity))**2 / self.ACCELERATION:
             if dist_norm > 1e-6:  # avoid division by zero
-                a = -(vel**2) / (2 * dist_norm) * np.sign(vel)
+                a = -((vel-np.linalg.norm(self.goal_pose_velocity))**2) / (2 * dist_norm) * np.sign(vel)
             else:
                 a = -self.ACCELERATION * np.sign(vel)
         elif abs(vel) < self.MAX_VELOCITY:
