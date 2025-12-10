@@ -24,7 +24,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'end_effector_frame_logger = p5_data_logger.end_effector_frame_logger:main'
+            'end_effector_frame_logger = p5_data_logger.end_effector_frame_logger:main',
+            'auto_tag = p5_data_logger.automatic_tag_mover:main'
         ],
     },
 )

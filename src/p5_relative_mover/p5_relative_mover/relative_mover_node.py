@@ -62,6 +62,9 @@ class RelativeMover(Node):
 
         self.i = 0
 
+        self.integral = np.array([0.0, 0.0, 0.0])
+        self.previous_error = np.array([0.0, 0.0, 0.0])
+
         self.pose_publisher = self.create_publisher(PoseStamped,
                                                     'p5_robot_pose_to_admittance', 10)
 
@@ -280,8 +283,8 @@ class RelativeMover(Node):
             return
 
         if self.linear_movement_use_tracking_velocity:
-            est_pose = self._get_estimated_goal_pose()
-            next_pose = self._linear_motion_predictor(est_pose)
+            # est_pose = self._get_estimated_goal_pose()
+            next_pose = self._test_of_PID_controller()
 
             self._publish_pose(next_pose)
             return
@@ -301,17 +304,14 @@ class RelativeMover(Node):
         vec = np.array(self.goal_pose_rel_base_frame[0:3]) - np.array(self.ee_pose_rel_base_frame[0:3])
         quat = np.array(self.goal_pose_rel_base_frame[3:7])
 
-        t = self._get_movement_time_to_goal(vec, self.robot_velocity)
+        t = self._get_movement_time_to_goal(vec, self.robot_theoretical_velocity)
 
         vec_org = vec.copy()
 
         for i in range(self.INTERP_ITERATIONS):
             vec = vec_org + t * self.goal_pose_velocity
-            t = self._get_movement_time_to_goal(vec, self.robot_velocity)
+            t = self._get_movement_time_to_goal(vec, self.robot_theoretical_velocity)
 
-        t += 0.3
-        vec = vec_org + t * self.goal_pose_velocity
-        self.get_logger().info(f"Vec adj {vec}")
         crd = vec + np.array(self.ee_pose_rel_base_frame[0:3])
 
         return np.concatenate([crd, quat])
@@ -322,8 +322,6 @@ class RelativeMover(Node):
     def _get_movement_time_to_goal(self, vec, vel):
         vel_proj = np.dot(vec, vel) / np.dot(vec, vec) * vec
         v0 = np.linalg.norm(vel_proj) * (2 * np.heaviside(np.dot(vec, vel), 1) - 1)  # Gets speed for robot
-
-        v0 = np.linalg.norm(self.robot_theoretical_velocity)
 
         dist = np.linalg.norm(vec)
 
@@ -377,8 +375,6 @@ class RelativeMover(Node):
         dist = crd_goal - crd_ee
         dist_norm = np.linalg.norm(dist)
 
-        vel = self.robot_theoretical_velocity
-
         if dist_norm < 1e-4:
             return np.concatenate([crd_goal, goal_pose_rel_base_frame[3:7]])
 
@@ -387,9 +383,9 @@ class RelativeMover(Node):
 
         dt = 1.0 / self.UPDATE_RATE
 
-        if abs(dist_norm) <= 0.5 * (vel-np.linalg.norm(self.goal_pose_velocity))**2 / self.ACCELERATION:
+        if abs(dist_norm) <= 0.5 * (vel)**2 / self.ACCELERATION:
             if dist_norm > 1e-6:  # avoid division by zero
-                a = -((vel-np.linalg.norm(self.goal_pose_velocity))**2) / (2 * dist_norm) * np.sign(vel)
+                a = -((vel)**2) / (2 * dist_norm) * np.sign(vel)
             else:
                 a = -self.ACCELERATION * np.sign(vel)
         elif abs(vel) < self.MAX_VELOCITY:
@@ -398,6 +394,7 @@ class RelativeMover(Node):
             a = 0.0
 
         vel_new = vel + a * dt
+
         vel_new = np.clip(vel_new, -self.MAX_VELOCITY, self.MAX_VELOCITY)
 
         step = vel_new * dt * dir_vec
@@ -427,6 +424,28 @@ class RelativeMover(Node):
         self.ee_pose_rel_base_frame_theoretical = new_pose
 
         return new_pose
+
+    def _test_of_PID_controller(self):
+        error = np.array(self.goal_pose_rel_base_frame[0:3]) - np.array(self.ee_pose_rel_base_frame[0:3])
+
+        kp = 0.005
+        ki = 0.05
+        kd = 0.001
+
+        dt = 1.0 / self.UPDATE_RATE
+
+        self.integral += error * dt
+        derivative = (error - self.previous_error) / dt
+
+        output = kp * error + ki * self.integral + kd * derivative
+        self.previous_error = error * dt
+
+        new_crd = np.array(self.ee_pose_rel_base_frame[0:3]) + output
+        new_pose = np.concatenate([new_crd, self.goal_pose_rel_base_frame[3:7]])
+        return new_pose
+
+
+
 
 
 def main(args=None):
