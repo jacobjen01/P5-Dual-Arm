@@ -26,14 +26,12 @@ class FutureTagEstimator(Node):
         self.declare_parameter('output_topic', '/future_tag_vector')                                                    # Navn på topic vi publicerer til
         self.declare_parameter('qos_depth', 10)
         self.declare_parameter('history_size', 5)                                                                       # Antal positioner vi gemmer i historikken pr tag til udregning af bevægelse
-        self.declare_parameter('use_averaging', True)
 
         # Henter parameterværdier
         input_topic = self.get_parameter('input_topic').get_parameter_value().string_value                              # Henter input topic navn fra parameter
         output_topic = self.get_parameter('output_topic').get_parameter_value().string_value                            # Henter output topic navn fra parameter
         qos_depth = self.get_parameter('qos_depth').get_parameter_value().integer_value                                 # Henter qos depth fra parameter
         self.history_size = self.get_parameter('history_size').get_parameter_value().integer_value                      # Henter history size fra parameter
-        self.use_averaging = self.get_parameter('use_averaging').get_parameter_value().bool_value                       # Henter use_averaging fra parameter
 
         # Opretter QoS profil
         qos = QoSProfile(depth=qos_depth)
@@ -52,7 +50,6 @@ class FutureTagEstimator(Node):
         self.tag_poses = {}      # Liste til at gemme nuværende poses { tag_key: {'translation': (x,y,z), 'rotation': (qx,qy,qz,qw)} }
         self.tag_history = {}    # Liste til at gemme historik { tag_key: deque([ (t, (x,y,z)), ... ], maxlen=history_size) }
         self.tag_motion = {}     # Liste til at gemme bevægelse { tag_key: {'direction': (dx,dy,dz), 'speed': s} }
-        self.vector_history = {} # Liste til at gemme vektor historik { tag_key: deque([ (vx, vy, vz), ... ], maxlen=history_size) }
 
         #self.get_logger().info(f'Subscribed to: {input_topic} -> Publishing to: {output_topic}')
 
@@ -109,48 +106,20 @@ class FutureTagEstimator(Node):
         vx = (pos_new[0] - pos_old[0]) / dt                     # Beregning af x hastighed komponent
         vy = (pos_new[1] - pos_old[1]) / dt                     # Beregning af y hastighed komponent
         vz = (pos_new[2] - pos_old[2]) / dt                     # Beregning af z hastighed komponent
-        if not self.use_averaging:
-            speed = math.sqrt(vx*vx + vy*vy + vz*vz)                # Beregning af samlet hastighed
+        speed = math.sqrt(vx*vx + vy*vy + vz*vz)                # Beregning af samlet hastighed
 
-            if speed == 0.0:                                        # Håndterer tilfælde med ingen bevægelse
-                direction_unit = (0.0, 0.0, 0.0)
-                direction = (0.0, 0.0, 0.0)
-            else:                                                   # Normaliserer retningen og sætter hastighedsvektorer
-                direction_unit = (vx/speed, vy/speed, vz/speed)
-                direction = (vx, vy, vz)
-
-            return direction_unit, direction, speed
-
-        else:
+        if speed == 0.0:                                        # Håndterer tilfælde med ingen bevægelse
+            direction_unit = (0.0, 0.0, 0.0)
+            direction = (0.0, 0.0, 0.0)
+        else:                                                   # Normaliserer retningen og sætter hastighedsvektorer
+            direction_unit = (vx/speed, vy/speed, vz/speed)
             direction = (vx, vy, vz)
-            return direction, direction, 0.0  # Speed will be computed later in averaging
 
-    def average_motion(self, vector_deque):
-        if len(vector_deque) == 0:                                                          # Håndterer tilfælde med ingen data
-            return (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), 0.0
-
-        for vx, vy, vz in vector_deque:                                                     # Summerer alle vektorer for hvert komponent
-            sum_x += vx
-            sum_y += vy
-            sum_z += vz
-        
-        avg_vx = sum_x / len(vector_deque)                                                  # Beregner gennemsnit for hvert komponent
-        avg_vy = sum_y / len(vector_deque)
-        avg_vz = sum_z / len(vector_deque)
-
-        avg_direction = (avg_vx, avg_vy, avg_vz)                                            # Samlet gennemsnitsretning
-
-        avg_speed = math.sqrt(avg_vx*avg_vx + avg_vy*avg_vy + avg_vz*avg_vz)                # Beregner samlet gennemsnitshastighed
-        if avg_speed == 0.0:
-            avg_direction_unit = (0.0, 0.0, 0.0)
-            avg_direction = (0.0, 0.0, 0.0)
-        else:
-            avg_direction_unit = (avg_vx/avg_speed, avg_vy/avg_speed, avg_vz/avg_speed)     # Normaliserer gennemsnitsretningen
-
-        return avg_direction, avg_direction_unit, avg_speed
+        return direction_unit, direction, speed
 
     def tf_callback(self, msg: TFMessage):
         if not msg.transforms:                                              # Hånderer tilfælde med tom TFMessage
+            self.get_logger().warning("Received empty TFMessage")
             #self.tag_history.clear()
             return
 
@@ -182,9 +151,6 @@ class FutureTagEstimator(Node):
                     self.tag_history[tag_key] = deque(maxlen=self.history_size)
                 self.tag_history[tag_key].append((t, (tx, ty, tz)))
 
-                # Sikrer at der er en deque til vektor historik for dette tag
-                if tag_key not in self.vector_history:
-                    self.vector_history[tag_key] = deque(maxlen=self.history_size)
 
                 # Udregn bevægelse ud fra historikken
                 direction_unit, direction, speed = self.compute_motion_from_history(self.tag_history[tag_key])
@@ -193,19 +159,6 @@ class FutureTagEstimator(Node):
                 # Logger bevægelsesinfo
                 #self.get_logger().info(f"Tag {tag_key} motion -> dir: ({direction[0]:.3f}, {direction[1]:.3f}, {direction[2]:.3f}), speed: {speed:.3f} m/s")
 
-                # Decide whether to average
-                if self.use_averaging:
-                    # store latest instantaneous direction (vx,vy,vz)
-                    self.vector_history[tag_key].append(direction)
-                    avg_direction, avg_direction_unit, avg_speed = self.average_motion(self.vector_history[tag_key])
-                    vx_used, vy_used, vz_used = avg_direction
-                    vx_unit_used, vy_unit_used, vz_unit_used = avg_direction_unit
-                    speed_used = avg_speed
-                else:
-                    vx_used, vy_used, vz_used = direction
-                    vx_unit_used, vy_unit_used, vz_unit_used = direction_unit
-                    speed_used = speed
-
                 # Opretter Tagvector besked for dette tag
                 vector = Tagvector()
                 vector.header = Header()
@@ -213,21 +166,21 @@ class FutureTagEstimator(Node):
                 vector.header.frame_id = "Tagvector"
                 vector.tag_id = child
                 vector.tag_id_only_nr=int(tag_key)
-                vector.vx = vx_used
-                vector.vy = vy_used
-                vector.vz = vz_used
-                vector.vx_unit = vx_unit_used
-                vector.vy_unit = vy_unit_used
-                vector.vz_unit = vz_unit_used
-                vector.speed = speed_used
+                vector.vx = direction[0]
+                vector.vy = direction[1]
+                vector.vz = direction[2]
+                vector.vx_unit = direction_unit[0]
+                vector.vy_unit = direction_unit[1]
+                vector.vz_unit = direction_unit[2]
+                vector.speed = speed
 
                 msg_out_array.vectors.append(vector)
             
             # Publiserer TagvectorArray beskeden
-            # self.get_logger().info(f"Publishing future tag vectors for {len(msg_out_array.vectors)} tags")
+            #self.get_logger().info(f"Publishing future tag vectors for {len(msg_out_array.vectors)} tags")
             self.tagvector_publisher.publish(msg_out_array)
 
-            # self.get_logger().info(f"Current tag poses: {self.tag_poses}")
+            #self.get_logger().info(f"Current tag poses: {self.tag_poses}")
 
 def main(args=None):
     rclpy.init(args=args)
