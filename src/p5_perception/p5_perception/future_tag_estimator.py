@@ -109,17 +109,22 @@ class FutureTagEstimator(Node):
         vx = (pos_new[0] - pos_old[0]) / dt                     # Beregning af x hastighed komponent
         vy = (pos_new[1] - pos_old[1]) / dt                     # Beregning af y hastighed komponent
         vz = (pos_new[2] - pos_old[2]) / dt                     # Beregning af z hastighed komponent
-        speed = math.sqrt(vx*vx + vy*vy + vz*vz)                # Beregning af samlet hastighed
+        if not self.use_averaging:
+            speed = math.sqrt(vx*vx + vy*vy + vz*vz)                # Beregning af samlet hastighed
 
-        if speed == 0.0:                                        # Håndterer tilfælde med ingen bevægelse
-            direction_unit = (0.0, 0.0, 0.0)
-            direction = (0.0, 0.0, 0.0)
-        else:                                                   # Normaliserer retningen og sætter hastighedsvektorer
-            direction_unit = (vx/speed, vy/speed, vz/speed)
+            if speed == 0.0:                                        # Håndterer tilfælde med ingen bevægelse
+                direction_unit = (0.0, 0.0, 0.0)
+                direction = (0.0, 0.0, 0.0)
+            else:                                                   # Normaliserer retningen og sætter hastighedsvektorer
+                direction_unit = (vx/speed, vy/speed, vz/speed)
+                direction = (vx, vy, vz)
+
+            return direction_unit, direction, speed
+
+        else:
             direction = (vx, vy, vz)
+            return direction, direction, 0.0  # Speed will be computed later in averaging
 
-        return direction_unit, direction, speed
-    
     def average_motion(self, vector_deque):
         if len(vector_deque) == 0:                                                          # Håndterer tilfælde med ingen data
             return (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), 0.0
