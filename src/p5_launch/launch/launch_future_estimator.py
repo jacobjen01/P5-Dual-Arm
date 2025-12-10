@@ -1,8 +1,12 @@
 from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    declare_use_averaging = DeclareLaunchArgument('use_averaging', default_value='true')
+
     return LaunchDescription([
         #
         # Realsense D435i
@@ -58,7 +62,9 @@ def generate_launch_description():
             package='p5_perception',
             namespace='perception',
             executable='future_tag_estimator',
-            name='future_tag_estimator_node'
+            name='future_tag_estimator_node',
+            parameters=[{'use_averaging': LaunchConfiguration('use_averaging', default='true')}]
+            #output='screen'
         ),
 
         # Static transform from mir -> camera_link
