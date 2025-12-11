@@ -61,7 +61,7 @@ def generate_launch_description():
             namespace='perception',
             executable='future_tag_estimator',
             name='future_tag_estimator_node',
-            parameters=[{'use_averaging': True}],
+            parameters=[{'use_averaging': True}, {'only_point': True}],
             #output='screen'
         ),
 
