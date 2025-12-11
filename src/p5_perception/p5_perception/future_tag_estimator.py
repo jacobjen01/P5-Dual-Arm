@@ -60,10 +60,6 @@ class FutureTagEstimator(Node):
         self.vector_history = {} # Liste til at gemme vektor historik { tag_key: deque([ (vx, vy, vz), ... ], maxlen=history_size) }
         self.estimated_tag_history = {} # Liste til at gemme estimeret historik { tag_key: deque([ (t, (x,y,z)), ... ], maxlen=history_size) }
 
-
-        self.last_est_point = {}            # { tag_key: (x,y,z,...) } last published estimated point
-        self.broadcast_threshold = 0.005    # meters; only re-broadcast when movement > threshold
-
         #self.get_logger().info(f'Subscribed to: {input_topic} -> Publishing to: {output_topic}')
 
     def create_tf_tree(self, parent_name, child_name, pose):
@@ -190,14 +186,6 @@ class FutureTagEstimator(Node):
         if len(point_deque) == 0:
             return (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0)
         
-        avg_x = 0.0
-        avg_y = 0.0
-        avg_z = 0.0
-        avg_qx = 0.0
-        avg_qy = 0.0
-        avg_qz = 0.0
-        avg_qw = 0.0
-
         for x, y, z, qx, qy, qz, qw in point_deque:
             avg_x += x / len(point_deque)
             avg_y += y / len(point_deque)
@@ -250,9 +238,6 @@ class FutureTagEstimator(Node):
                 if tag_key not in self.vector_history:
                     self.vector_history[tag_key] = deque(maxlen=self.history_size)
 
-                # Default estimated point (used when not averaging)
-                est_point = (tx, ty, tz, rx, ry, rz, rw)
-
                 # Udregn bevægelse ud fra historikken
                 if not self.only_point:
                     direction_unit, direction, speed = self.compute_motion_from_history(self.tag_history[tag_key])
@@ -266,17 +251,22 @@ class FutureTagEstimator(Node):
                         vx_used, vy_used, vz_used = avg_direction
                         vx_unit_used, vy_unit_used, vz_unit_used = avg_direction_unit
                         speed_used = avg_speed
+                        # Calculate estimated next position
+                        # Ensure deque exists for this tag
+                        if tag_key not in self.estimated_tag_history:
+                            self.estimated_tag_history[tag_key] = deque(maxlen=self.history_size)
 
-                        # Compute estimated next position using stored estimated history (if present)
-                        if tag_key in self.estimated_tag_history and len(self.estimated_tag_history[tag_key]) > 0:
+                        # If we have previous estimated points use them to predict next, otherwise use current measurement
+                        if len(self.estimated_tag_history[tag_key]) > 0:
                             est_point = self.calculate_next_position((tx, ty, tz, rx, ry, rz, rw), self.estimated_tag_history[tag_key], avg_direction, t)
                         else:
                             est_point = (tx, ty, tz, rx, ry, rz, rw)
 
-                        # Only create deque if missing (do not recreate every callback)
-                        if tag_key not in self.estimated_tag_history:
-                            self.estimated_tag_history[tag_key] = deque(maxlen=self.history_size)
                         self.estimated_tag_history[tag_key].append((t, est_point))
+
+                        # Broadcast estimated pose into the TF tree as a new child frame (choose name you prefer)
+                        est_child_frame = f"{child}_future"
+                        self.create_tf_tree("Tagvector", est_child_frame, est_point)
 
                     else:
                         vx_used, vy_used, vz_used = direction
@@ -300,54 +290,31 @@ class FutureTagEstimator(Node):
 
                     msg_out_array.vectors.append(vector)
 
-                    # Opretter TFMessage for kun point
-                    # Only append / broadcast if estimated point moved past threshold to avoid spamming RViz
-                    last = self.last_est_point.get(tag_key)
-                    dist_moved = None
-                    if last is None:
-                        dist_moved = float('inf')
-                    else:
-                        dx = est_point[0] - last[0]
-                        dy = est_point[1] - last[1]
-                        dz = est_point[2] - last[2]
-                        dist_moved = math.sqrt(dx*dx + dy*dy + dz*dz)
 
-                    if dist_moved is None or dist_moved > self.broadcast_threshold:
-                        point = TransformStamped()
-                        point.header.stamp = self.get_clock().now().to_msg()
-                        point.header.frame_id = "camera_color_optical_frame"
-                        point.child_frame_id = f'new{child}'
-                        point.transform.translation.x = est_point[0]
-                        point.transform.translation.y = est_point[1]
-                        point.transform.translation.z = est_point[2]
-                        point.transform.rotation.x = est_point[3]
-                        point.transform.rotation.y = est_point[4]
-                        point.transform.rotation.z = est_point[5]
-                        point.transform.rotation.w = est_point[6]
-                        msg_out_point.transforms.append(point)
 
-                        # update last published estimate
-                        self.last_est_point[tag_key] = est_point
+                else:
+                    avg_point = self.average_point(self.tag_history[tag_key]) if self.use_averaging else (tx, ty, tz, rx, ry, rz, rw)
+                    t = TransformStamped()
+                    t.header.stamp = self.get_clock().now().to_msg()
+                    t.header.frame_id = "Tagvector"
+                    t.child_frame_id = child
+                    t.transform.translation.x = avg_point[0]
+                    t.transform.translation.y = avg_point[1]
+                    t.transform.translation.z = avg_point[2]
+                    t.transform.rotation.x = avg_point[3]
+                    t.transform.rotation.y = avg_point[4]
+                    t.transform.rotation.z = avg_point[5]
+                    t.transform.rotation.w = avg_point[6]
+                    msg_out_array.transforms.append(t)
+                    continue
 
                 # Logger bevægelsesinfo
                 #self.get_logger().info(f"Tag {tag_key} motion -> dir: ({direction[0]:.3f}, {direction[1]:.3f}, {direction[2]:.3f}), speed: {speed:.3f} m/s")
             
             # Publiserer TagvectorArray beskeden
             # self.get_logger().info(f"Publishing future tag vectors for {len(msg_out_array.vectors)} tags")
-            if not self.only_point:
-                self.tagvector_publisher.publish(msg_out_array)
-                # only publish point message if it has transforms
-                if msg_out_point.transforms:
-                    self.point_publisher.publish(msg_out_point)
-                    for point in msg_out_point.transforms:
-                        self.create_tf_tree("camera_color_optical_frame", point.child_frame_id, (point.transform.translation.x,
-                                                                         point.transform.translation.y,
-                                                                         point.transform.translation.z,
-                                                                         point.transform.rotation.x,
-                                                                         point.transform.rotation.y,
-                                                                         point.transform.rotation.z,
-                                                                         point.transform.rotation.w))
-
+            self.tagvector_publisher.publish(msg_out_array)
+            self.point_publisher.publish(msg_out_point)
 
             # self.get_logger().info(f"Current tag poses: {self.tag_poses}")
 
