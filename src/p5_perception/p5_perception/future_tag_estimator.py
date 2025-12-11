@@ -296,7 +296,7 @@ class FutureTagEstimator(Node):
                     avg_point = self.average_point(self.tag_history[tag_key]) if self.use_averaging else (tx, ty, tz, rx, ry, rz, rw)
                     t = TransformStamped()
                     t.header.stamp = self.get_clock().now().to_msg()
-                    t.header.frame_id = "Tagvector"
+                    t.header.frame_id = "camera_color_optical_frame"
                     t.child_frame_id = child
                     t.transform.translation.x = avg_point[0]
                     t.transform.translation.y = avg_point[1]
