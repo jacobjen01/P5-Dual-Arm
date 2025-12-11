@@ -132,6 +132,10 @@ class FutureTagEstimator(Node):
         if len(vector_deque) == 0:                                                          # Håndterer tilfælde med ingen data
             return (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), 0.0
 
+        sum_x = 0
+        sum_y = 0
+        sum_z = 0
+
         for vx, vy, vz in vector_deque:                                                     # Summerer alle vektorer for hvert komponent
             sum_x += vx
             sum_y += vy
@@ -169,7 +173,6 @@ class FutureTagEstimator(Node):
 
     def tf_callback(self, msg: TFMessage):
         if not msg.transforms:                                              # Hånderer tilfælde med tom TFMessage
-            self.get_logger().warning("Received empty TFMessage")
             #self.tag_history.clear()
             return
 

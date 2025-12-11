@@ -29,7 +29,7 @@ class ProgramExecutor(Node):
             "r_move": self._command_r_move,
             "r_move_fe": self._command_r_move_fe,
             "sync": self._command_synchronize,
-            "frame_availability": self._command_frame_availability,
+            "frame_available": self._command_frame_availability,
             "grip": self._command_grip,
             "admittance": self._command_admittance,
             "delay": self._command_delay,
@@ -59,6 +59,7 @@ class ProgramExecutor(Node):
         self.service_call_list = [] #Stores service calls for the system to call. Format is in a list {"client", "req", "cache_id"}
         self.feedback = {}
         self.threads = []
+        self.frames = []
 
         self.program = None
 
@@ -110,6 +111,7 @@ class ProgramExecutor(Node):
         return response
 
     def service_call_timer_callback(self):
+        self.frames = self.tf_buffer.all_frames_as_string()
         if len(self.service_call_list) > 0:
             call = self.service_call_list.pop(0)
             client = call["client"]
@@ -272,9 +274,7 @@ class ProgramExecutor(Node):
     def _command_frame_availability(self, name, robot_name, args):
         frame = args['frame_name']
         try:
-            frames = self.tf_buffer.all_frames_as_string()
-
-            while not frame in frames:
+            while not frame in self.frames:
                 continue
 
         except Exception as e:

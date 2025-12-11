@@ -25,7 +25,6 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            '_error_handling = p5_safety._error_handling:main',
             'collision_detector_node = p5_safety.collision_detector_node:main',
             'robot_protective_stop_node = p5_safety.robot_protective_stop_node:main'
         ],

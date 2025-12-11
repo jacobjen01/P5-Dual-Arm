@@ -9,7 +9,7 @@ from p5_safety._error_handling import ErrorHandler
 
 from geometry_msgs.msg import TransformStamped, PoseStamped
 from p5_interfaces.srv import MoveToPose, GetStatus, StopRelativeMover
-from p5_interfaces.msg import Tagvector, CommandState
+from p5_interfaces.msg import TagvectorArray, CommandState
 
 
 class RelativeMover(Node):
@@ -17,13 +17,13 @@ class RelativeMover(Node):
         super().__init__('p5_relative_mover_node')
 
         self.MAX_VELOCITY = 0.2  # 200 mm/s
-        self.ACCELERATION = 0.1  # 500 mm/s^2
+        self.ACCELERATION = 0.05  # 500 mm/s^2
         self.INTERP_ITERATIONS = 10  # number of times the point estimator should update.
         self.UPDATE_RATE = 100  # Number of times the system shall update per second
         self.CRD_OFFSET = 0.005 # 2 mm off.
         self.ANGLE_OFFSET = 0.01 # in radians.
         self.ROBOT_BASE_ORIENTATIONS = {"alice": np.array([-0.3557, -0.1534, 0.8516, 0.3531]),
-                                "bob": np.array([-0.2285, 0.2261, -0.0575, 0.9452])}
+                                "bob": np.array([-0.13392, 0.35155, -0.34523, 0.85983])}
 
         self.error_handler = ErrorHandler(self)
 
@@ -36,11 +36,11 @@ class RelativeMover(Node):
         self.robot_prefix = self.get_parameter('robot_prefix').get_parameter_value().string_value
 
         robot_R = R.from_quat(self.ROBOT_BASE_ORIENTATIONS[self.robot_prefix])
-        self.velocity_rotation_matrix = robot_R.as_matrix() 
+        self.velocity_rotation_matrix = np.linalg.inv(robot_R.as_matrix())
         
         self.linear_movement = False
         self.linear_movement_use_tracking_velocity = False
-        self.reference_frame = None
+        self.reference_frame = "tag36h11:3"
 
         self.timer_create_goal_frame = None
         self.timer_get_goal_pose_respect_to_base = None
@@ -57,16 +57,19 @@ class RelativeMover(Node):
 
         self.goal_pose_velocity = np.array([0.0, 0.0, 0.0])
         self.robot_velocity = np.array([0.0, 0.0, 0.0])
-        self.robot_theoretical_velocity = 0.0
+        self.robot_theoretical_velocity = np.array([0.0, 0.0, 0.0])
         self.previous_robot_poses = []
 
         self.i = 0
 
+        self.integral = np.array([0.0, 0.0, 0.0])
+        self.previous_error = np.array([0.0, 0.0, 0.0])
+
         self.pose_publisher = self.create_publisher(PoseStamped,
                                                     'p5_robot_pose_to_admittance', 10)
 
-        self.velocity_subscriber = self.create_subscription(Tagvector,
-                                                            "p5_future_tag_vector",
+        self.velocity_subscriber = self.create_subscription(TagvectorArray,
+                                                            "/future_tag_vector",
                                                             self.get_goal_velocity_callback, 10)
 
         self.move_to_pose_service = self.create_service(MoveToPose,
@@ -100,6 +103,8 @@ class RelativeMover(Node):
             self.ee_pose_rel_base_frame_start_frame = self.ee_pose_rel_base_frame.copy()
             self.ee_pose_rel_base_frame_theoretical = self.ee_pose_rel_base_frame.copy()
 
+            self.goal_pose_velocity = np.array([0.0, 0.0, 0.0])
+            
             if self.timer_move_robot is None:
                 self.timer_create_goal_frame = self.create_timer(1 / self.UPDATE_RATE, self.create_current_goal_frame)
                 self.timer_get_goal_pose_respect_to_base = self.create_timer(1 / self.UPDATE_RATE,
@@ -184,13 +189,11 @@ class RelativeMover(Node):
         for vector in msg.vectors:
             if vector.tag_id == self.reference_frame:
     
-                vec = np.array([[vector.vx_unit],
-                                [vector.vy_unit],
-                                [vector.vz_unit]])
-                
-                self.goal_pose_velocity = (self.velocity_rotation_matrix @ vec).flatten()
+                vec = np.array([[vector.vx],
+                                [vector.vy],
+                                [vector.vz]])
 
-                self.get_logger().info(f"Received velocity {[vector.vx_unit, vector.vy_unit, vector.vz_unit]}")
+                self.goal_pose_velocity = (self.velocity_rotation_matrix @ vec).flatten()
 
     """
     Creates the goal frame which the robot should move to
@@ -274,25 +277,25 @@ class RelativeMover(Node):
     Continuously moves the robot towards frame.
     """
     def move_to_pose(self):
-        try:
-            if not self.linear_movement:
-                self._publish_pose(self.goal_pose_rel_base_frame)
-                return
+        #try:
+        if not self.linear_movement:
+            self._publish_pose(self.goal_pose_rel_base_frame)
+            return
 
-            if self.linear_movement_use_tracking_velocity:
-                est_pose = self._get_estimated_goal_pose()
-                next_pose = self._linear_motion_predictor(est_pose)
+        if self.linear_movement_use_tracking_velocity:
+            # est_pose = self._get_estimated_goal_pose()
+            next_pose = self._test_of_PID_controller()
 
-                self._publish_pose(next_pose)
-                return
-
-            next_pose = self._linear_motion_predictor(self.goal_pose_rel_base_frame)
             self._publish_pose(next_pose)
+            return
 
-        except Exception as e:
-            self.get_logger().error(f'Error: {e}')
-            self.error_handler.report_error(self.error_handler.error,
-                                            f'Error: {e}')
+        next_pose = self._linear_motion_predictor(self.goal_pose_rel_base_frame)
+        self._publish_pose(next_pose)
+
+        #except Exception as e:
+        #    self.get_logger().error(f'Error: {e}')
+        #    self.error_handler.report_error(self.error_handler.error,
+        #                                    f'Error: {e}')
 
     """
     Helper function to get estimated goal pose in respect to base frame of robot, for robot to move to
@@ -301,13 +304,13 @@ class RelativeMover(Node):
         vec = np.array(self.goal_pose_rel_base_frame[0:3]) - np.array(self.ee_pose_rel_base_frame[0:3])
         quat = np.array(self.goal_pose_rel_base_frame[3:7])
 
-        t = self._get_movement_time_to_goal(vec, self.robot_velocity)
+        t = self._get_movement_time_to_goal(vec, self.robot_theoretical_velocity)
 
         vec_org = vec.copy()
 
         for i in range(self.INTERP_ITERATIONS):
             vec = vec_org + t * self.goal_pose_velocity
-            t = self._get_movement_time_to_goal(vec, self.robot_velocity)
+            t = self._get_movement_time_to_goal(vec, self.robot_theoretical_velocity)
 
         crd = vec + np.array(self.ee_pose_rel_base_frame[0:3])
 
@@ -319,8 +322,6 @@ class RelativeMover(Node):
     def _get_movement_time_to_goal(self, vec, vel):
         vel_proj = np.dot(vec, vel) / np.dot(vec, vec) * vec
         v0 = np.linalg.norm(vel_proj) * (2 * np.heaviside(np.dot(vec, vel), 1) - 1)  # Gets speed for robot
-
-        v0 = self.robot_theoretical_velocity
 
         dist = np.linalg.norm(vec)
 
@@ -371,37 +372,42 @@ class RelativeMover(Node):
         quat_ee = np.array(self.ee_pose_rel_base_frame[3:7])
         quat_goal = np.array(goal_pose_rel_base_frame[3:7])
 
-        dist = np.linalg.norm(crd_goal - crd_ee)
+        dist = crd_goal - crd_ee
+        dist_norm = np.linalg.norm(dist)
 
-        vel = self.robot_theoretical_velocity
+        if dist_norm < 1e-4:
+            return np.concatenate([crd_goal, goal_pose_rel_base_frame[3:7]])
 
-        if dist < 0.01:
-            return np.concatenate([crd_goal, quat_goal])
+        dir_vec = dist / dist_norm
+        vel = np.dot(self.robot_theoretical_velocity, dir_vec)
 
-        if dist <= 1 / 2 * vel**2 / self.ACCELERATION:
-            a = vel**2 / (2 * dist) * -1
-            v = vel
+        dt = 1.0 / self.UPDATE_RATE
 
-        elif vel >= self.MAX_VELOCITY:
-            a = 0
-            v = self.MAX_VELOCITY
-
+        if abs(dist_norm) <= 0.5 * (vel)**2 / self.ACCELERATION:
+            if dist_norm > 1e-6:  # avoid division by zero
+                a = -((vel)**2) / (2 * dist_norm) * np.sign(vel)
+            else:
+                a = -self.ACCELERATION * np.sign(vel)
+        elif abs(vel) < self.MAX_VELOCITY:
+            a = self.ACCELERATION * np.sign(np.dot(dist, dir_vec))
         else:
-            v = vel
-            a = self.ACCELERATION
+            a = 0.0
 
-        step = v * 1 / self.UPDATE_RATE + 1 / 2 * a * (1 / self.UPDATE_RATE) ** 2
-        frac = 1 - dist / np.linalg.norm(crd_goal - crd_ee_start)
+        vel_new = vel + a * dt
 
+        vel_new = np.clip(vel_new, -self.MAX_VELOCITY, self.MAX_VELOCITY)
+
+        step = vel_new * dt * dir_vec
+        new_crd = crd_ee + step
+
+        if np.linalg.norm(new_crd - crd_ee_start) > np.linalg.norm(crd_goal - crd_ee_start):
+            new_crd = crd_goal
+            vel_new = 0.0
+
+        self.robot_theoretical_velocity = vel_new * dir_vec
+
+        frac = 1 - np.linalg.norm(dist) / np.linalg.norm(crd_goal - crd_ee_start)
         frac = float(np.clip(frac, 0.0, 1.0))
-
-        vec = (crd_ee + (crd_goal - crd_ee) / dist * step) - crd_ee_start
-        vec_proj_onto = crd_goal - crd_ee_start
-        proj = np.dot(vec, vec_proj_onto) / np.linalg.norm(vec_proj_onto) ** 2 * vec_proj_onto
-
-        new_crd = proj + crd_ee_start
-
-        self.robot_theoretical_velocity += a * (1 / self.UPDATE_RATE)
 
         quat_ee /= np.linalg.norm(quat_ee) + 1e-16
         quat_goal /= np.linalg.norm(quat_goal) + 1e-16
@@ -418,6 +424,28 @@ class RelativeMover(Node):
         self.ee_pose_rel_base_frame_theoretical = new_pose
 
         return new_pose
+
+    def _test_of_PID_controller(self):
+        error = np.array(self.goal_pose_rel_base_frame[0:3]) - np.array(self.ee_pose_rel_base_frame[0:3])
+
+        kp = 0.005
+        ki = 0.05
+        kd = 0.001
+
+        dt = 1.0 / self.UPDATE_RATE
+
+        self.integral += error * dt
+        derivative = (error - self.previous_error) / dt
+
+        output = kp * error + ki * self.integral + kd * derivative
+        self.previous_error = error * dt
+
+        new_crd = np.array(self.ee_pose_rel_base_frame[0:3]) + output
+        new_pose = np.concatenate([new_crd, self.goal_pose_rel_base_frame[3:7]])
+        return new_pose
+
+
+
 
 
 def main(args=None):

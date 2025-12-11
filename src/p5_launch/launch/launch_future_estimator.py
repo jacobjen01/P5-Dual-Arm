@@ -5,8 +5,6 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    declare_use_averaging = DeclareLaunchArgument('use_averaging', default_value='true')
-
     return LaunchDescription([
         #
         # Realsense D435i
@@ -63,7 +61,7 @@ def generate_launch_description():
             namespace='perception',
             executable='future_tag_estimator',
             name='future_tag_estimator_node',
-            parameters=[{'use_averaging': LaunchConfiguration('use_averaging')}],
+            parameters=[{'use_averaging': True}],
             #output='screen'
         ),
 

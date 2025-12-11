@@ -10,14 +10,14 @@ scale:
   linear: 1.0  # Max linear velocity. Meters per publish_period. Unit is [m/s]. Only used for Cartesian commands.
   rotational: 4.0  # Max angular velocity. Rads per publish_period. Unit is [rad/s]. Only used for Cartesian commands.
   # Max joint angular/linear velocity. Rads or Meters per publish period. Only used for joint commands on joint_command_in_topic.
-  joint: 0.01
+  joint: 0.1
 # This is a fudge factor to account for any latency in the system, e.g. network latency or poor low-level
 # controller performance. It essentially increases the timestep when calculating the target pose, to move the target
 # pose farther away. [seconds]
 system_latency_compensation: 0.04
 
 max_linear_speed: 0.6        # [m/s] for translation
-max_rotational_speed: 3.14   # [rad/s] for rotation (~180°/s)
+max_rotational_speed: 3.14   # [rad/s] for rotation 
 
 
 ## Properties of outgoing commands
