@@ -9,6 +9,7 @@ from rclpy.executors import MultiThreadedExecutor
 from geometry_msgs.msg import TransformStamped, PoseStamped
 from std_srvs.srv import Trigger
 from datetime import datetime
+import random
 
 
 class AutomaticTagMover(Node):
@@ -33,7 +34,8 @@ class AutomaticTagMover(Node):
         self.pose[2] += self.VELOCITY[2] * df
 
         if self.pose[0] > -0.05:
-            self.VELOCITY[0] = -0.1
+            #self.VELOCITY[0] = -0.1
+            self.pose[0] = -0.6
 
         if self.pose[0] < -0.6:
             self.VELOCITY[0] = 0.1
@@ -64,9 +66,9 @@ class AutomaticTagMover(Node):
             t.header.frame_id = "camera_color_optical_frame"
             t.child_frame_id = f"tag36h11:5"
 
-            t.transform.translation.x = self.pose[0]
-            t.transform.translation.y = self.pose[1]
-            t.transform.translation.z = self.pose[2]
+            t.transform.translation.x = self.pose[0] + random.uniform(-0.01, 0.01)
+            t.transform.translation.y = self.pose[1] + random.uniform(-0.01, 0.01)
+            t.transform.translation.z = self.pose[2] + random.uniform(-0.01, 0.01)
 
             t.transform.rotation.x = self.pose[3]
             t.transform.rotation.y = self.pose[4]

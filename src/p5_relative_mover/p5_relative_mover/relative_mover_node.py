@@ -63,6 +63,7 @@ class RelativeMover(Node):
         self.i = 0
 
         self.integral = np.array([0.0, 0.0, 0.0])
+        self.integral_double = np.array([0.0, 0.0, 0.0])
         self.previous_error = np.array([0.0, 0.0, 0.0])
 
         self.pose_publisher = self.create_publisher(PoseStamped,
@@ -94,6 +95,12 @@ class RelativeMover(Node):
         try:
             self.linear_movement = request.linear
             self.linear_movement_use_tracking_velocity = request.use_tracking_velocity
+
+            if request.frame != self.reference_frame:
+                self.integral = np.array([0.0, 0.0, 0.0])
+                self.integral_double = np.array([0.0, 0.0, 0.0])
+                self.previous_error = np.array([0.0, 0.0, 0.0])
+            
             self.reference_frame = request.frame
 
             pos = request.pose.position
@@ -428,16 +435,17 @@ class RelativeMover(Node):
     def _test_of_PID_controller(self):
         error = np.array(self.goal_pose_rel_base_frame[0:3]) - np.array(self.ee_pose_rel_base_frame[0:3])
 
-        kp = 0.005
-        ki = 0.05
-        kd = 0.001
+        kp = 0.03
+        ki = 0.003
+        kd = 0.05
 
         dt = 1.0 / self.UPDATE_RATE
 
         self.integral += error * dt
+        self.integral_double += self.integral * dt
         derivative = (error - self.previous_error) / dt
 
-        output = kp * error + ki * self.integral + kd * derivative
+        output = kp * error + ki * self.integral_double + kd * derivative
         self.previous_error = error * dt
 
         new_crd = np.array(self.ee_pose_rel_base_frame[0:3]) + output

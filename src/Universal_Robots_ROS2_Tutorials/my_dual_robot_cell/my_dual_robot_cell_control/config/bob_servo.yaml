@@ -10,7 +10,7 @@ scale:
   linear: 0.6  # Max linear velocity. Meters per publish_period. Unit is [m/s]. Only used for Cartesian commands.
   rotational: 1.5  # Max angular velocity. Rads per publish_period. Unit is [rad/s]. Only used for Cartesian commands.
   # Max joint angular/linear velocity. Rads or Meters per publish period. Only used for joint commands on joint_command_in_topic.
-  joint: 0.01
+  joint: 1.0
 # This is a fudge factor to account for any latency in the system, e.g. network latency or poor low-level
 # controller performance. It essentially increases the timestep when calculating the target pose, to move the target
 # pose farther away. [seconds]
@@ -65,7 +65,7 @@ lower_singularity_threshold: 100.0  # Start decelerating when the condition numb
 hard_stop_singularity_threshold: 200.0  # Stop when the condition number hits this
 
 # added as a buffer to joint limits [radians]. If moving quickly, make this larger.
-joint_limit_margins: [0.4, 0.4, 0.4, 0.4, 0.4, 0.4]
+joint_limit_margins: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 
 ## Topic names
 cartesian_command_in_topic: ~/delta_twist_cmds  # Topic for incoming Cartesian twist commands
