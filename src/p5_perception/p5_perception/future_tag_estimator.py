@@ -292,7 +292,6 @@ class FutureTagEstimator(Node):
 
 
 
-                else:
                     avg_point = self.average_point(self.tag_history[tag_key]) if self.use_averaging else (tx, ty, tz, rx, ry, rz, rw)
                     t = TransformStamped()
                     t.header.stamp = self.get_clock().now().to_msg()
@@ -306,7 +305,6 @@ class FutureTagEstimator(Node):
                     t.transform.rotation.z = avg_point[5]
                     t.transform.rotation.w = avg_point[6]
                     msg_out_array.transforms.append(t)
-                    continue
 
                 # Logger bevægelsesinfo
                 #self.get_logger().info(f"Tag {tag_key} motion -> dir: ({direction[0]:.3f}, {direction[1]:.3f}, {direction[2]:.3f}), speed: {speed:.3f} m/s")
