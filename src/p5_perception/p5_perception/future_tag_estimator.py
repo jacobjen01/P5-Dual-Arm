@@ -318,7 +318,14 @@ class FutureTagEstimator(Node):
             # self.get_logger().info(f"Publishing future tag vectors for {len(msg_out_array.vectors)} tags")
             self.tagvector_publisher.publish(msg_out_array)
             self.point_publisher.publish(msg_out_point)
-            
+            for point in msg_out_point.transforms:
+                self.create_tf_tree("Tagvector", point.child_frame_id, (point.transform.translation.x,
+                                                                         point.transform.translation.y,
+                                                                         point.transform.translation.z,
+                                                                         point.transform.rotation.x,
+                                                                         point.transform.rotation.y,
+                                                                         point.transform.rotation.z,
+                                                                         point.transform.rotation.w))
 
             # self.get_logger().info(f"Current tag poses: {self.tag_poses}")
 
