@@ -123,6 +123,24 @@ so in simulation mode, add the following to the previous command.
 ```
 alice_use_mock_hardware:=true bob_use_mock_hardware:=true
 ```
+### Load A Program
+To load and run a program type the following command for loading the program
+```
+ros2 service call /program_executor/load_program p5_interfaces/srv/LoadProgram "{name: '<Program name>'}"
+```
+To run the loaded program, use:
+```
+ros2 service call /program_executor/run_program p5_interfaces/srv/RunProgram "{status: true}"
+```
+
+The programs are visible in the json file /config/programs.json.
+
+
+If you want to simulate a tag moving, run the following node:
+```
+ros2 run p5_data_logger auto_tag
+```
+
 ### Move the robot
 #### Using the pre defined poses
 To move the robot to the predefined poses that is saved in 'pre_config_poses.json' use the following command.
