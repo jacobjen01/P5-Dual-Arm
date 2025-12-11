@@ -285,7 +285,7 @@ class FutureTagEstimator(Node):
                     point = TransformStamped()
                     point.header.stamp = self.get_clock().now().to_msg()
                     point.header.frame_id = "Tagvector"
-                    point.child_frame_id = child
+                    point.child_frame_id = f'new{child}'
                     point.transform.translation.x = tx
                     point.transform.translation.y = ty
                     point.transform.translation.z = tz
@@ -293,7 +293,6 @@ class FutureTagEstimator(Node):
                     point.transform.rotation.y = ry
                     point.transform.rotation.z = rz
                     point.transform.rotation.w = rw
-                    self.create_tf_tree("camera_color_optical_frame", f'new{child}', (tx, ty, tz, rx, ry, rz, rw))
                     msg_out_point.transforms.append(point)
 
                 else:
@@ -319,6 +318,7 @@ class FutureTagEstimator(Node):
             # self.get_logger().info(f"Publishing future tag vectors for {len(msg_out_array.vectors)} tags")
             self.tagvector_publisher.publish(msg_out_array)
             self.point_publisher.publish(msg_out_point)
+            
 
             # self.get_logger().info(f"Current tag poses: {self.tag_poses}")
 
