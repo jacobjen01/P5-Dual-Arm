@@ -208,6 +208,7 @@ class FutureTagEstimator(Node):
             if not self.only_point:
                 msg_out_array = TagvectorArray()
                 msg_out_point = TFMessage()
+                lol = []
             else:
                 msg_out_point = TFMessage()
 
@@ -282,18 +283,7 @@ class FutureTagEstimator(Node):
                     msg_out_array.vectors.append(vector)
 
                     # Opretter TFMessage for kun point
-                    point = TransformStamped()
-                    point.header.stamp = self.get_clock().now().to_msg()
-                    point.header.frame_id = "camera_color_optical_frame"
-                    point.child_frame_id = f'new{child}'
-                    point.transform.translation.x = est_point[0]
-                    point.transform.translation.y = est_point[1]
-                    point.transform.translation.z = est_point[2]
-                    point.transform.rotation.x = est_point[3]
-                    point.transform.rotation.y = est_point[4]
-                    point.transform.rotation.z = est_point[5]
-                    point.transform.rotation.w = est_point[6]
-                    msg_out_point.transforms.append(point)
+                    lol.append((tx, ty, tz, rx, ry, rz, rw), child)
 
                 else:
                     avg_point = self.average_point(self.tag_history[tag_key]) if self.use_averaging else (tx, ty, tz, rx, ry, rz, rw)
@@ -317,15 +307,21 @@ class FutureTagEstimator(Node):
             # Publiserer TagvectorArray beskeden
             # self.get_logger().info(f"Publishing future tag vectors for {len(msg_out_array.vectors)} tags")
             self.tagvector_publisher.publish(msg_out_array)
+            #self.point_publisher.publish(msg_out_point)
+            for point in lol:
+                t = TransformStamped()
+                t.header.stamp = self.get_clock().now().to_msg()
+                t.header.frame_id = "camera_color_optical_frame"
+                t.child_frame_id = f"est {point[1]}"
+                t.transform.translation.x = point[0][0]
+                t.transform.translation.y = point[0][1]
+                t.transform.translation.z = point[0][2]
+                t.transform.rotation.x = point[0][3]
+                t.transform.rotation.y = point[0][4]
+                t.transform.rotation.z = point[0][5]
+                t.transform.rotation.w = point[0][6]
+                msg_out_point.transforms.append(t)
             self.point_publisher.publish(msg_out_point)
-            for point in msg_out_point.transforms:
-                self.create_tf_tree("camera_color_optical_frame", point.child_frame_id, (point.transform.translation.x,
-                                                                         point.transform.translation.y,
-                                                                         point.transform.translation.z,
-                                                                         point.transform.rotation.x,
-                                                                         point.transform.rotation.y,
-                                                                         point.transform.rotation.z,
-                                                                         point.transform.rotation.w))
 
             # self.get_logger().info(f"Current tag poses: {self.tag_poses}")
 
