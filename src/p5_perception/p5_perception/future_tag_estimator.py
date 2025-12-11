@@ -27,7 +27,6 @@ class FutureTagEstimator(Node):
         self.declare_parameter('qos_depth', 10)
         self.declare_parameter('history_size', 5)                                                                       # Antal positioner vi gemmer i historikken pr tag til udregning af bevægelse
         self.declare_parameter('use_averaging', True)
-        self.declare_parameter('only_point', False)
 
         # Henter parameterværdier
         input_topic = self.get_parameter('input_topic').get_parameter_value().string_value                              # Henter input topic navn fra parameter
@@ -35,16 +34,12 @@ class FutureTagEstimator(Node):
         qos_depth = self.get_parameter('qos_depth').get_parameter_value().integer_value                                 # Henter qos depth fra parameter
         self.history_size = self.get_parameter('history_size').get_parameter_value().integer_value                      # Henter history size fra parameter
         self.use_averaging = self.get_parameter('use_averaging').get_parameter_value().bool_value                       # Henter use_averaging fra parameter
-        self.only_point = self.get_parameter('only_point').get_parameter_value().bool_value                             # Henter only_point fra parameter
 
         # Opretter QoS profil
         qos = QoSProfile(depth=qos_depth)
 
         # Opretter publisher til output topic. Sætter beskedtypen til vores custom type Tagvector
         self.tagvector_publisher = self.create_publisher(TagvectorArray, output_topic, qos)
-
-        # Opretter publisher til output topic for kun point
-        self.point_publisher = self.create_publisher(TFMessage, '/future_point', qos)
 
         # Opretter subscription til input topic. Her er det /tf fra apriltag detektering
         self.subscription = self.create_subscription(
@@ -58,7 +53,7 @@ class FutureTagEstimator(Node):
         self.tag_history = {}    # Liste til at gemme historik { tag_key: deque([ (t, (x,y,z)), ... ], maxlen=history_size) }
         self.tag_motion = {}     # Liste til at gemme bevægelse { tag_key: {'direction': (dx,dy,dz), 'speed': s} }
         self.vector_history = {} # Liste til at gemme vektor historik { tag_key: deque([ (vx, vy, vz), ... ], maxlen=history_size) }
-        self.estimated_tag_history = {} # Liste til at gemme estimeret historik { tag_key: deque([ (t, (x,y,z)), ... ], maxlen=history_size) }
+        self.est_tag_pos = {}    # Liste til at gemme estimerede fremtidige positioner { tag_key: deque([ (vx, vy, vz), ... ], maxlen=history_size) }
 
         #self.get_logger().info(f'Subscribed to: {input_topic} -> Publishing to: {output_topic}')
 
@@ -136,10 +131,6 @@ class FutureTagEstimator(Node):
         if len(vector_deque) == 0:                                                          # Håndterer tilfælde med ingen data
             return (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), 0.0
 
-        sum_x = 0
-        sum_y = 0
-        sum_z = 0
-
         for vx, vy, vz in vector_deque:                                                     # Summerer alle vektorer for hvert komponent
             sum_x += vx
             sum_y += vy
@@ -182,34 +173,16 @@ class FutureTagEstimator(Node):
 
         return (avg_x, avg_y, avg_z, new_point[3], new_point[4], new_point[5], new_point[6])
 
-    def average_point(self, point_deque):
-        if len(point_deque) == 0:
-            return (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0)
-        
-        for x, y, z, qx, qy, qz, qw in point_deque:
-            avg_x += x / len(point_deque)
-            avg_y += y / len(point_deque)
-            avg_z += z / len(point_deque)
-            avg_qx += qx / len(point_deque)
-            avg_qy += qy / len(point_deque)
-            avg_qz += qz / len(point_deque)
-            avg_qw += qw / len(point_deque)
-
-        return (avg_x, avg_y, avg_z, avg_qx, avg_qy, avg_qz, avg_qw)
-
     def tf_callback(self, msg: TFMessage):
         if not msg.transforms:                                              # Hånderer tilfælde med tom TFMessage
+            self.get_logger().warning("Received empty TFMessage")
             #self.tag_history.clear()
             return
 
         #Check at der er en transform der er et tag
         has_tag_frame = any(transform.header.frame_id == "camera_color_optical_frame" for transform in msg.transforms)
         if has_tag_frame:
-            if not self.only_point:
-                msg_out_array = TagvectorArray()
-                msg_out_point = TFMessage()
-            else:
-                msg_out_point = TFMessage()
+            msg_out_array = TagvectorArray()
 
             for transform in msg.transforms:                                    # Går igennem alle transformer dvs alle tags i beskeden
                 if transform.header.frame_id != "camera_color_optical_frame":   # Vi er kun interesseret i tags der er i world frame
@@ -232,87 +205,65 @@ class FutureTagEstimator(Node):
                 # Sikrer at der er en deque til historik for dette tag
                 if tag_key not in self.tag_history:
                     self.tag_history[tag_key] = deque(maxlen=self.history_size)
-                self.tag_history[tag_key].append((t, (tx, ty, tz, rx, ry, rz, rw)))
+                self.tag_history[tag_key].append((t, (tx, ty, tz, rx, ry, rz, rw)))  # Tilføjer ny position til historikken
 
                 # Sikrer at der er en deque til vektor historik for dette tag
                 if tag_key not in self.vector_history:
                     self.vector_history[tag_key] = deque(maxlen=self.history_size)
 
+                if tag_key not in self.est_tag_pos:
+                    self.est_tag_pos[tag_key] = deque(maxlen=self.history_size)
+
                 # Udregn bevægelse ud fra historikken
-                if not self.only_point:
-                    direction_unit, direction, speed = self.compute_motion_from_history(self.tag_history[tag_key])
-                    self.tag_motion[tag_key] = {'direction_unit': direction_unit, 'direction': direction, 'speed': speed}
-
-                    # Decide whether to average
-                    if self.use_averaging:
-                        # store latest instantaneous direction (vx,vy,vz)
-                        self.vector_history[tag_key].append(direction)
-                        avg_direction, avg_direction_unit, avg_speed = self.average_motion(self.vector_history[tag_key])
-                        vx_used, vy_used, vz_used = avg_direction
-                        vx_unit_used, vy_unit_used, vz_unit_used = avg_direction_unit
-                        speed_used = avg_speed
-                        # Calculate estimated next position
-                        # Ensure deque exists for this tag
-                        if tag_key not in self.estimated_tag_history:
-                            self.estimated_tag_history[tag_key] = deque(maxlen=self.history_size)
-
-                        # If we have previous estimated points use them to predict next, otherwise use current measurement
-                        if len(self.estimated_tag_history[tag_key]) > 0:
-                            est_point = self.calculate_next_position((tx, ty, tz, rx, ry, rz, rw), self.estimated_tag_history[tag_key], avg_direction, t)
-                        else:
-                            est_point = (tx, ty, tz, rx, ry, rz, rw)
-
-                        self.estimated_tag_history[tag_key].append((t, est_point))
-
-                        # Broadcast estimated pose into the TF tree as a new child frame (choose name you prefer)
-                        est_child_frame = f"{child}_future"
-                        self.create_tf_tree("Tagvector", est_child_frame, est_point)
-
-                    else:
-                        vx_used, vy_used, vz_used = direction
-                        vx_unit_used, vy_unit_used, vz_unit_used = direction_unit
-                        speed_used = speed
-
-                    # Opretter Tagvector besked for dette tag
-                    vector = Tagvector()
-                    vector.header = Header()
-                    vector.header.stamp = self.get_clock().now().to_msg()
-                    vector.header.frame_id = "Tagvector"
-                    vector.tag_id = child
-                    vector.tag_id_only_nr=int(tag_key)
-                    vector.vx = vx_used
-                    vector.vy = vy_used
-                    vector.vz = vz_used
-                    vector.vx_unit = vx_unit_used
-                    vector.vy_unit = vy_unit_used
-                    vector.vz_unit = vz_unit_used
-                    vector.speed = speed_used
-
-                    msg_out_array.vectors.append(vector)
-
-
-
-                    avg_point = self.average_point(self.tag_history[tag_key]) if self.use_averaging else (tx, ty, tz, rx, ry, rz, rw)
-                    t = TransformStamped()
-                    t.header.stamp = self.get_clock().now().to_msg()
-                    t.header.frame_id = "camera_color_optical_frame"
-                    t.child_frame_id = child
-                    t.transform.translation.x = avg_point[0]
-                    t.transform.translation.y = avg_point[1]
-                    t.transform.translation.z = avg_point[2]
-                    t.transform.rotation.x = avg_point[3]
-                    t.transform.rotation.y = avg_point[4]
-                    t.transform.rotation.z = avg_point[5]
-                    t.transform.rotation.w = avg_point[6]
-                    msg_out_array.transforms.append(t)
+                direction_unit, direction, speed = self.compute_motion_from_history(self.tag_history[tag_key])
+                self.tag_motion[tag_key] = {'direction_unit': direction_unit, 'direction': direction, 'speed': speed}
 
                 # Logger bevægelsesinfo
                 #self.get_logger().info(f"Tag {tag_key} motion -> dir: ({direction[0]:.3f}, {direction[1]:.3f}, {direction[2]:.3f}), speed: {speed:.3f} m/s")
+
+                # Decide whether to average
+                if self.use_averaging:
+                    # store latest instantaneous direction (vx,vy,vz)
+                    self.vector_history[tag_key].append(direction)
+                    avg_direction, avg_direction_unit, avg_speed = self.average_motion(self.vector_history[tag_key])
+                    vx_used, vy_used, vz_used = avg_direction
+                    vx_unit_used, vy_unit_used, vz_unit_used = avg_direction_unit
+                    speed_used = avg_speed
+
+                    est_point = self.calculate_next_position(
+                        (tx, ty, tz, rx, ry, rz, rw),
+                        self.est_tag_pos[tag_key],
+                        avg_direction,
+                        t
+                    )
+                    self.est_tag_pos[tag_key].append((t, est_point))
+                    self.create_tf_tree("mir", f"est_{child}", est_point)
+
+                else:
+                    vx_used, vy_used, vz_used = direction
+                    vx_unit_used, vy_unit_used, vz_unit_used = direction_unit
+                    speed_used = speed
+
+                # Opretter Tagvector besked for dette tag
+                vector = Tagvector()
+                vector.header = Header()
+                vector.header.stamp = self.get_clock().now().to_msg()
+                vector.header.frame_id = "Tagvector"
+                vector.tag_id = child
+                vector.tag_id_only_nr=int(tag_key)
+                vector.vx = vx_used
+                vector.vy = vy_used
+                vector.vz = vz_used
+                vector.vx_unit = vx_unit_used
+                vector.vy_unit = vy_unit_used
+                vector.vz_unit = vz_unit_used
+                vector.speed = speed_used
+
+                msg_out_array.vectors.append(vector)
             
             # Publiserer TagvectorArray beskeden
             # self.get_logger().info(f"Publishing future tag vectors for {len(msg_out_array.vectors)} tags")
             self.tagvector_publisher.publish(msg_out_array)
-            self.point_publisher.publish(msg_out_point)
 
             # self.get_logger().info(f"Current tag poses: {self.tag_poses}")
 
