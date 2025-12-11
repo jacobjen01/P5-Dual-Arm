@@ -284,15 +284,15 @@ class FutureTagEstimator(Node):
                     # Opretter TFMessage for kun point
                     point = TransformStamped()
                     point.header.stamp = self.get_clock().now().to_msg()
-                    point.header.frame_id = "Tagvector"
+                    point.header.frame_id = "camera_color_optical_frame"
                     point.child_frame_id = f'new{child}'
-                    point.transform.translation.x = tx
-                    point.transform.translation.y = ty
-                    point.transform.translation.z = tz
-                    point.transform.rotation.x = rx
-                    point.transform.rotation.y = ry
-                    point.transform.rotation.z = rz
-                    point.transform.rotation.w = rw
+                    point.transform.translation.x = est_point[0]
+                    point.transform.translation.y = est_point[1]
+                    point.transform.translation.z = est_point[2]
+                    point.transform.rotation.x = est_point[3]
+                    point.transform.rotation.y = est_point[4]
+                    point.transform.rotation.z = est_point[5]
+                    point.transform.rotation.w = est_point[6]
                     msg_out_point.transforms.append(point)
 
                 else:
@@ -319,7 +319,7 @@ class FutureTagEstimator(Node):
             self.tagvector_publisher.publish(msg_out_array)
             self.point_publisher.publish(msg_out_point)
             for point in msg_out_point.transforms:
-                self.create_tf_tree("Tagvector", point.child_frame_id, (point.transform.translation.x,
+                self.create_tf_tree("camera_color_optical_frame", point.child_frame_id, (point.transform.translation.x,
                                                                          point.transform.translation.y,
                                                                          point.transform.translation.z,
                                                                          point.transform.rotation.x,
