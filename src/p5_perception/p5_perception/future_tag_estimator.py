@@ -293,6 +293,7 @@ class FutureTagEstimator(Node):
                     point.transform.rotation.y = ry
                     point.transform.rotation.z = rz
                     point.transform.rotation.w = rw
+                    self.create_tf_tree("Heck", child, (tx, ty, tz, rx, ry, rz, rw))
                     msg_out_point.transforms.append(point)
 
                 else:
