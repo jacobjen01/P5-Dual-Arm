@@ -26,15 +26,17 @@ class FutureTagEstimator(Node):
         self.declare_parameter('input_topic', '/tf')                                                                    # Navn på topic vi subber fra
         self.declare_parameter('output_topic', '/future_tag_vector')                                                    # Navn på topic vi publicerer til
         self.declare_parameter('qos_depth', 10)
-        self.declare_parameter('history_size', 20)                                                                       # Antal positioner vi gemmer i historikken pr tag til udregning af bevægelse
+        self.declare_parameter('history_size', 10)                                                                       # Antal positioner vi gemmer i historikken pr tag til udregning af bevægelse
         self.declare_parameter('use_averaging', True)
-
+        self.declare_parameter('median_window', 5)   # window size for median filter (use 1 to disable)
+ 
         # Henter parameterværdier
         input_topic = self.get_parameter('input_topic').get_parameter_value().string_value                              # Henter input topic navn fra parameter
         output_topic = self.get_parameter('output_topic').get_parameter_value().string_value                            # Henter output topic navn fra parameter
         qos_depth = self.get_parameter('qos_depth').get_parameter_value().integer_value                                 # Henter qos depth fra parameter
         self.history_size = self.get_parameter('history_size').get_parameter_value().integer_value                      # Henter history size fra parameter
         self.use_averaging = self.get_parameter('use_averaging').get_parameter_value().bool_value                       # Henter use_averaging fra parameter
+        self.median_window = int(self.get_parameter('median_window').get_parameter_value().integer_value)
 
         # Opretter QoS profil
         qos = QoSProfile(depth=qos_depth)
@@ -103,7 +105,10 @@ class FutureTagEstimator(Node):
             return (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), 0.0
         
         t_old, pos_old = history_deque[0]                       # Sætter ældste tid og position
-        t_new, pos_new = history_deque[-1]                      # sætter nyeste tid og position
+        if len(history_deque) < 5:
+            t_new, pos_new = history_deque[-1]                  # Sætter nyeste tid og position
+        else:
+            t_new, pos_new = history_deque[4]                      # sætter nyeste tid og position
         dt = t_new - t_old                                      # Tidsforskel
 
         if dt <= 0:                                             # Håndterer tilfælde med ugyldig tidsforskel
@@ -213,6 +218,30 @@ class FutureTagEstimator(Node):
                 if tag_key not in self.tag_history:
                     self.tag_history[tag_key] = deque(maxlen=self.history_size)
                 self.tag_history[tag_key].append((t, (tx, ty, tz, rx, ry, rz, rw)))  # Tilføjer ny position til historikken
+
+                # --- APPLY MEDIAN FILTER OVER LAST self.median_window MEASUREMENTS ---
+                # If median_window == 1 this is effectively disabled (keeps current measurement)
+                if self.median_window > 1:
+                    hist_list = list(self.tag_history[tag_key])
+                    window = min(self.median_window, len(hist_list))
+                    recent = np.array([h[1] for h in hist_list[-window:]], dtype=float)  # shape (n,7)
+                    if recent.shape[0] > 0:
+                        # median for translation (x,y,z)
+                        med_t = np.median(recent[:, 0:3], axis=0)
+                        # median for quaternion components then normalize
+                        med_q = np.median(recent[:, 3:7], axis=0)
+                        norm = np.linalg.norm(med_q)
+                        if norm > 1e-12:
+                            med_q = med_q / norm
+                        else:
+                            # fallback to latest quaternion if median degenerate
+                            med_q = recent[-1, 3:7]
+                        tx, ty, tz = float(med_t[0]), float(med_t[1]), float(med_t[2])
+                        rx, ry, rz, rw = float(med_q[0]), float(med_q[1]), float(med_q[2]), float(med_q[3])
+
+
+                    # add median filtered point to tf tree
+                    self.create_tf_tree("mir", f'Median_{child}', (tx, ty, tz, rx, ry, rz, rw))
 
                 # Sikrer at der er en deque til vektor historik for dette tag
                 if tag_key not in self.vector_history:
