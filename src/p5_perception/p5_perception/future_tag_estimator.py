@@ -11,7 +11,7 @@ import numpy as np
 from p5_safety._error_handling import ErrorHandler
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 from std_msgs.msg import Bool, Header
-import time
+# import time
 
 class FutureTagEstimator(Node):
     def __init__(self):
@@ -179,7 +179,7 @@ class FutureTagEstimator(Node):
         return (avg_x, avg_y, avg_z, new_point[3], new_point[4], new_point[5], new_point[6])
 
     def tf_callback(self, msg: TFMessage):
-        start_time = time.perf_counter()
+        # start_time = time.perf_counter()
 
         if not msg.transforms:                                              # Hånderer tilfælde med tom TFMessage
             self.get_logger().warning("Received empty TFMessage")
@@ -235,7 +235,7 @@ class FutureTagEstimator(Node):
                 if self.use_averaging:
                     # store latest instantaneous direction (vx,vy,vz)
                     self.vector_history[tag_key].append(direction)
-                    self.get_logger().info(f"Tag {tag_key} vector history length: {len(self.vector_history[tag_key])}")
+                    #self.get_logger().info(f"Tag {tag_key} vector history length: {len(self.vector_history[tag_key])}")
                     avg_direction, avg_direction_unit, avg_speed = self.average_motion(self.vector_history[tag_key])
                     vx_used, vy_used, vz_used = avg_direction
                     vx_unit_used, vy_unit_used, vz_unit_used = avg_direction_unit
@@ -277,8 +277,8 @@ class FutureTagEstimator(Node):
             self.tagvector_publisher.publish(msg_out_array)
 
             # Always log how long this callback took
-        duration = time.perf_counter() - start_time
-        self.get_logger().info(f"tf_callback duration: {duration:.6f} s")
+        # duration = time.perf_counter() - start_time
+        #self.get_logger().info(f"tf_callback duration: {duration:.6f} s")
 
             # self.get_logger().info(f"Current tag poses: {self.tag_poses}")
 
