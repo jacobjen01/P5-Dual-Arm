@@ -260,7 +260,7 @@ class FutureTagEstimator(Node):
                 vector.header = Header()
                 vector.header.stamp = self.get_clock().now().to_msg()
                 vector.header.frame_id = "Tagvector"
-                vector.tag_id = child
+                vector.tag_id = f'est_{child}'
                 vector.tag_id_only_nr=int(tag_key)
                 vector.vx = vx_used
                 vector.vy = vy_used
