@@ -11,6 +11,7 @@ import numpy as np
 from p5_safety._error_handling import ErrorHandler
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 from std_msgs.msg import Bool, Header
+import time
 
 class FutureTagEstimator(Node):
     def __init__(self):
@@ -25,7 +26,7 @@ class FutureTagEstimator(Node):
         self.declare_parameter('input_topic', '/tf')                                                                    # Navn på topic vi subber fra
         self.declare_parameter('output_topic', '/future_tag_vector')                                                    # Navn på topic vi publicerer til
         self.declare_parameter('qos_depth', 10)
-        self.declare_parameter('history_size', 5)                                                                       # Antal positioner vi gemmer i historikken pr tag til udregning af bevægelse
+        self.declare_parameter('history_size', 20)                                                                       # Antal positioner vi gemmer i historikken pr tag til udregning af bevægelse
         self.declare_parameter('use_averaging', True)
 
         # Henter parameterværdier
@@ -128,6 +129,10 @@ class FutureTagEstimator(Node):
             return direction, direction, 0.0  # Speed will be computed later in averaging
 
     def average_motion(self, vector_deque):
+        sum_x = 0.0
+        sum_y = 0.0
+        sum_z = 0.0
+
         if len(vector_deque) == 0:                                                          # Håndterer tilfælde med ingen data
             return (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), 0.0
 
@@ -174,6 +179,8 @@ class FutureTagEstimator(Node):
         return (avg_x, avg_y, avg_z, new_point[3], new_point[4], new_point[5], new_point[6])
 
     def tf_callback(self, msg: TFMessage):
+        start_time = time.perf_counter()
+
         if not msg.transforms:                                              # Hånderer tilfælde med tom TFMessage
             self.get_logger().warning("Received empty TFMessage")
             #self.tag_history.clear()
@@ -215,16 +222,20 @@ class FutureTagEstimator(Node):
                     self.est_tag_pos[tag_key] = deque(maxlen=self.history_size)
 
                 # Udregn bevægelse ud fra historikken
-                direction_unit, direction, speed = self.compute_motion_from_history(self.tag_history[tag_key])
+                if len(self.est_tag_pos[tag_key]) == 0:
+                    direction_unit, direction, speed = self.compute_motion_from_history(self.tag_history[tag_key])
+                else:
+                    direction_unit, direction, speed = self.compute_motion_from_history(self.est_tag_pos[tag_key])
                 self.tag_motion[tag_key] = {'direction_unit': direction_unit, 'direction': direction, 'speed': speed}
 
                 # Logger bevægelsesinfo
-                #self.get_logger().info(f"Tag {tag_key} motion -> dir: ({direction[0]:.3f}, {direction[1]:.3f}, {direction[2]:.3f}), speed: {speed:.3f} m/s")
+                # self.get_logger().info(f"Tag {tag_key} motion -> dir: ({direction[0]:.3f}, {direction[1]:.3f}, {direction[2]:.3f}), speed: {speed:.3f} m/s")
 
                 # Decide whether to average
                 if self.use_averaging:
                     # store latest instantaneous direction (vx,vy,vz)
                     self.vector_history[tag_key].append(direction)
+                    self.get_logger().info(f"Tag {tag_key} vector history length: {len(self.vector_history[tag_key])}")
                     avg_direction, avg_direction_unit, avg_speed = self.average_motion(self.vector_history[tag_key])
                     vx_used, vy_used, vz_used = avg_direction
                     vx_unit_used, vy_unit_used, vz_unit_used = avg_direction_unit
@@ -264,6 +275,10 @@ class FutureTagEstimator(Node):
             # Publiserer TagvectorArray beskeden
             # self.get_logger().info(f"Publishing future tag vectors for {len(msg_out_array.vectors)} tags")
             self.tagvector_publisher.publish(msg_out_array)
+
+            # Always log how long this callback took
+        duration = time.perf_counter() - start_time
+        self.get_logger().info(f"tf_callback duration: {duration:.6f} s")
 
             # self.get_logger().info(f"Current tag poses: {self.tag_poses}")
 
