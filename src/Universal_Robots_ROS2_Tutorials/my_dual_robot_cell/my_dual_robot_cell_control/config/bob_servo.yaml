@@ -17,7 +17,7 @@ scale:
 system_latency_compensation: 0.04
 
 ## Properties of outgoing commands
-publish_period: 0.004  # 1/Nominal publish rate [seconds]
+publish_period: 0.01  # 1/Nominal publish rate [seconds]
 low_latency_mode: false  # Set this to true to publish as soon as an incoming Twist command is received (publish_period is ignored)
 
 # What type of topic does your robot driver expect?
@@ -44,7 +44,7 @@ smoothing_filter_plugin_name: "online_signal_smoothing::ButterworthFilterPlugin"
 is_primary_planning_scene_monitor: false
 
 ## Incoming Joint State properties
-low_pass_filter_coeff: 10.0  # Larger --> trust the filtered data more, trust the measurements less.
+low_pass_filter_coeff: 0.5  # Larger --> trust the filtered data more, trust the measurements less.
 
 ## MoveIt properties
 move_group_name: bob_manipulator  # Often 'manipulator' or 'arm'
@@ -65,7 +65,7 @@ lower_singularity_threshold: 100.0  # Start decelerating when the condition numb
 hard_stop_singularity_threshold: 200.0  # Stop when the condition number hits this
 
 # added as a buffer to joint limits [radians]. If moving quickly, make this larger.
-joint_limit_margins: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+joint_limit_margins: [50.0, 50.0, 50.0, 50.0, 50.0, 50.0]
 
 ## Topic names
 cartesian_command_in_topic: ~/delta_twist_cmds  # Topic for incoming Cartesian twist commands
@@ -75,7 +75,7 @@ status_topic: ~/status  # Publish status to this topic
 command_out_topic: /bob_forward_position_controller/commands  # Publish outgoing commands here
 
 ## Collision checking for the entire robot body
-check_collisions: true  # Check collisions?
+check_collisions: false  # Check collisions?
 collision_check_rate: 5.0  # [Hz] Collision-checking can easily bog down a CPU if done too often.
 # Two collision check algorithms are available: "threshold_distance" begins slowing down when
 # nearer than a specified distance. Good if you want to tune collision thresholds manually.
