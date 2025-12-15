@@ -60,6 +60,24 @@ class FutureTagEstimator(Node):
 
         #self.get_logger().info(f'Subscribed to: {input_topic} -> Publishing to: {output_topic}')
 
+    def median_pose_from_est(self, tag_key, child):
+        # Apply median over estimated positions (post-smoothing)
+        if self.median_window > 1 and tag_key in self.est_tag_pos and len(self.est_tag_pos[tag_key]) > 0:
+            est_hist = list(self.est_tag_pos[tag_key])
+            window = min(self.median_window, len(est_hist))
+            recent = np.array([p[1] for p in est_hist[-window:]], dtype=float)  # shape (n,7)
+            if recent.shape[0] > 0:
+                med_t = np.median(recent[:, 0:3], axis=0)
+                med_q = np.median(recent[:, 3:7], axis=0)
+                norm = np.linalg.norm(med_q)
+                if norm > 1e-12:
+                    med_q = med_q / norm
+                else:
+                    med_q = recent[-1, 3:7]
+                mtx, mty, mtz = float(med_t[0]), float(med_t[1]), float(med_t[2])
+                mrx, mry, mrz, mrw = float(med_q[0]), float(med_q[1]), float(med_q[2]), float(med_q[3])
+                self.create_tf_tree("mir", f"Median_{child}", (mtx, mty, mtz, mrx, mry, mrz, mrw))
+
     def create_tf_tree(self, parent_name, child_name, pose):
         t = TransformStamped()
         t.header.stamp = self.get_clock().now().to_msg()
@@ -221,27 +239,9 @@ class FutureTagEstimator(Node):
 
                 # --- APPLY MEDIAN FILTER OVER LAST self.median_window MEASUREMENTS ---
                 # If median_window == 1 this is effectively disabled (keeps current measurement)
-                if self.median_window > 1:
-                    hist_list = list(self.tag_history[tag_key])
-                    window = min(self.median_window, len(hist_list))
-                    recent = np.array([h[1] for h in hist_list[-window:]], dtype=float)  # shape (n,7)
-                    if recent.shape[0] > 0:
-                        # median for translation (x,y,z)
-                        med_t = np.median(recent[:, 0:3], axis=0)
-                        # median for quaternion components then normalize
-                        med_q = np.median(recent[:, 3:7], axis=0)
-                        norm = np.linalg.norm(med_q)
-                        if norm > 1e-12:
-                            med_q = med_q / norm
-                        else:
-                            # fallback to latest quaternion if median degenerate
-                            med_q = recent[-1, 3:7]
-                        tx, ty, tz = float(med_t[0]), float(med_t[1]), float(med_t[2])
-                        rx, ry, rz, rw = float(med_q[0]), float(med_q[1]), float(med_q[2]), float(med_q[3])
-
-
-                    # add median filtered point to tf tree
-                    self.create_tf_tree("mir", f'Median_{child}', (tx, ty, tz, rx, ry, rz, rw))
+                # Disabled: median now applied after smoothing on estimated poses
+                if False and self.median_window > 1:
+                    pass
 
                 # Sikrer at der er en deque til vektor historik for dette tag
                 if tag_key not in self.vector_history:
@@ -278,11 +278,19 @@ class FutureTagEstimator(Node):
                     )
                     self.est_tag_pos[tag_key].append((t, est_point))
                     self.create_tf_tree("mir", f"est_{child}", est_point)
+                    # Apply median after smoothing on estimated poses
+                    self.median_pose_from_est(tag_key, child)
 
                 else:
                     vx_used, vy_used, vz_used = direction
                     vx_unit_used, vy_unit_used, vz_unit_used = direction_unit
                     speed_used = speed
+                    # Keep estimated pose consistent by using current measurement
+                    est_point = (tx, ty, tz, rx, ry, rz, rw)
+                    self.est_tag_pos[tag_key].append((t, est_point))
+                    self.create_tf_tree("mir", f"est_{child}", est_point)
+                    # Apply median after smoothing on estimated poses
+                    self.median_pose_from_est(tag_key, child)
 
                 # Opretter Tagvector besked for dette tag
                 vector = Tagvector()
