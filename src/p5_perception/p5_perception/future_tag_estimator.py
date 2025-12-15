@@ -28,7 +28,7 @@ class FutureTagEstimator(Node):
         self.declare_parameter('qos_depth', 10)
         self.declare_parameter('history_size', 10)                                                                       # Antal positioner vi gemmer i historikken pr tag til udregning af bevægelse
         self.declare_parameter('use_averaging', True)
-        self.declare_parameter('median_window', 5)   # window size for median filter (use 1 to disable)
+        self.declare_parameter('median_window', 3)   # window size for median filter (use 1 to disable)
  
         # Henter parameterværdier
         input_topic = self.get_parameter('input_topic').get_parameter_value().string_value                              # Henter input topic navn fra parameter
