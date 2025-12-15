@@ -781,11 +781,25 @@
             "args": {"config_name": "ALICE_GRIP_READY"}
           }, {
             "command": "frame_available",
-            "args": {"frame_name": "tag36h11:0"}
-          }, 
-		  {
+            "args": {"frame_name": "est_tag36h11:0"}
+          }, {
             "command": "r_move",
-            "args": {"frame": "tag36h11:0", "linear": true, "use_tracking_velocity": true, "pose": [0.0, 0.1, 0.125, 0.70711, 0.70711, 0.0, 0.0]}
+            "args": {"frame": "est_tag36h11:0", "linear": true, "use_tracking_velocity": true, "pose": [0.0, 0.12, 0.130, 0.70711, 0.70711, 0.0, 0.0]}
+          }, {
+			"command": "delay",
+			"args": {"time": 100.0}
+		  },{
+            "command": "r_move",
+            "args": {"frame": "est_tag36h11:0", "linear": true, "use_tracking_velocity": true, "pose": [0.0, 0.08, 0.130, 0.70711, 0.70711, 0.0, 0.0]}
+          }, {
+            "command": "grip",
+            "args": {"action": "close"}
+          }, {
+			"command": "delay",
+			"args": {"time": 0.5}
+		  }, {
+            "command": "r_move",
+            "args": {"frame": "est_tag36h11:0", "linear": true, "use_tracking_velocity": true, "pose": [0.0, 0.12, 0.130, 0.70711, 0.70711, 0.0, 0.0]}
           }
         ]
       }
@@ -859,11 +873,11 @@
             "args": {"config_name": "ALICE_GRIP_READY"}
           }, {
             "command": "frame_available",
-            "args": {"frame_name": "tag36h11:5"}
+            "args": {"frame_name": "est_tag36h11:5"}
           },
 		  {
             "command": "r_move",
-            "args": {"frame": "tag36h11:5", "linear": true, "use_tracking_velocity": true, "pose": [0.0, 0.1, 0.125, 0.70711, 0.70711, 0.0, 0.0]}
+            "args": {"frame": "est_tag36h11:5", "linear": true, "use_tracking_velocity": true, "pose": [0.0, 0.1, 0.125, 0.70711, 0.70711, 0.0, 0.0]}
           }
         ]
       }

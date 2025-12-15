@@ -20,8 +20,9 @@ class RelativeMover(Node):
         self.ACCELERATION = 0.05  # 500 mm/s^2
         self.INTERP_ITERATIONS = 10  # number of times the point estimator should update.
         self.UPDATE_RATE = 100  # Number of times the system shall update per second
-        self.CRD_OFFSET = 0.005 # 2 mm off.
+        self.CRD_OFFSET = 0.006 # 2 mm off.
         self.ANGLE_OFFSET = 0.01 # in radians.
+        self.DECIMAL_PRECISION = 2
         self.ROBOT_BASE_ORIENTATIONS = {"alice": np.array([-0.3557, -0.1534, 0.8516, 0.3531]),
                                 "bob": np.array([-0.13392, 0.35155, -0.34523, 0.85983])}
 
@@ -40,7 +41,7 @@ class RelativeMover(Node):
         
         self.linear_movement = False
         self.linear_movement_use_tracking_velocity = False
-        self.reference_frame = "tag36h11:3"
+        self.reference_frame = None
 
         self.timer_create_goal_frame = None
         self.timer_get_goal_pose_respect_to_base = None
@@ -52,6 +53,7 @@ class RelativeMover(Node):
         self.goal_pose_rel_target_frame = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
         self.goal_pose_rel_base_frame = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
         self.ee_pose_rel_base_frame = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+        self.ee_pose_rel_base_frame_buffer =[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]  
         self.ee_pose_rel_base_frame_theoretical = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
         self.ee_pose_rel_base_frame_start_frame = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
 
@@ -134,8 +136,20 @@ class RelativeMover(Node):
     """
     def move_to_pose_status_callback(self, request, response):
         try:
-            robot_pose = np.array(self.ee_pose_rel_base_frame)
-            goal_pose = np.array(self.goal_pose_rel_base_frame)
+            now = rclpy.time.Time()
+            t_ee = self.tf_buffer.lookup_transform(f"{self.robot_prefix}_base_link", f"{self.robot_prefix}_tool0", now)
+            t_goal = self.tf_buffer.lookup_transform(f"{self.robot_prefix}_base_link",
+                                                    f"{self.robot_prefix}_goal_frame",
+                                                    now)
+            crd = t_ee.transform.translation
+            quat = t_ee.transform.rotation
+
+            robot_pose = np.array([crd.x, crd.y, crd.z, quat.x, quat.y, quat.z, quat.w])
+            
+            crd = t_goal.transform.translation
+            quat = t_goal.transform.rotation
+            
+            goal_pose = np.array([crd.x, crd.y, crd.z, quat.x, quat.y, quat.z, quat.w])  
 
             robot_R = R.from_quat(robot_pose[3:7])
             goal_R = R.from_quat(goal_pose[3:7])
@@ -195,11 +209,11 @@ class RelativeMover(Node):
     def get_goal_velocity_callback(self, msg):
         for vector in msg.vectors:
             if vector.tag_id == self.reference_frame:
-    
+                
                 vec = np.array([[vector.vx],
                                 [vector.vy],
                                 [vector.vz]])
-
+                
                 self.goal_pose_velocity = (self.velocity_rotation_matrix @ vec).flatten()
 
     """
@@ -434,22 +448,36 @@ class RelativeMover(Node):
 
     def _test_of_PID_controller(self):
         error = np.array(self.goal_pose_rel_base_frame[0:3]) - np.array(self.ee_pose_rel_base_frame[0:3])
+        
 
-        kp = 0.03
-        ki = 0.003
-        kd = 0.05
+        kp = 0.2 #0.03
+        ki = 0.35  #0.03
+        kd = 0.004 #0.05
 
         dt = 1.0 / self.UPDATE_RATE
 
-        self.integral += error * dt
+        int_error = error * dt
+
+        signed_gp = np.sign(self.goal_pose_velocity)
+        signed_ie = np.sign(int_error)
+
+        for axis in range(len(int_error)):
+            if signed_gp[axis] != signed_ie[axis] and signed_gp[axis] != 0:
+                int_error[axis] = 0 
+
+        self.integral += int_error
         self.integral_double += self.integral * dt
         derivative = (error - self.previous_error) / dt
 
-        output = kp * error + ki * self.integral_double + kd * derivative
+        output = kp * error + ki * self.integral + kd * derivative + self.goal_pose_velocity * dt
         self.previous_error = error * dt
 
-        new_crd = np.array(self.ee_pose_rel_base_frame[0:3]) + output
+        new_crd = np.array(self.ee_pose_rel_base_frame[0:3]) + output 
+
         new_pose = np.concatenate([new_crd, self.goal_pose_rel_base_frame[3:7]])
+            
+        self.get_logger().info(f"Output value: {output}")
+
         return new_pose
 
 
