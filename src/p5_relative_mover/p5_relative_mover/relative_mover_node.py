@@ -68,8 +68,8 @@ class RelativeMover(Node):
         self.integral_double = np.array([0.0, 0.0, 0.0])
         self.previous_error = np.array([0.0, 0.0, 0.0])
 
-        self.pose_publisher = self.create_publisher(PoseStamped,
-                                                    'p5_robot_pose_to_admittance', 10)
+        self.pose_publisher = self.create_publisher(PoseStamped, 
+                                                    'p5_robot_pose_to_admittance', 10) 
 
         self.velocity_subscriber = self.create_subscription(TagvectorArray,
                                                             "/future_tag_vector",
@@ -466,7 +466,6 @@ class RelativeMover(Node):
                 int_error[axis] = 0 
 
         self.integral += int_error
-        self.integral_double += self.integral * dt
         derivative = (error - self.previous_error) / dt
 
         output = kp * error + ki * self.integral + kd * derivative + self.goal_pose_velocity * dt
@@ -476,7 +475,7 @@ class RelativeMover(Node):
 
         new_pose = np.concatenate([new_crd, self.goal_pose_rel_base_frame[3:7]])
             
-        self.get_logger().info(f"Output value: {output}")
+        #self.get_logger().info(f"Integral length: {np.linalg.norm(self.integral)}")
 
         return new_pose
 

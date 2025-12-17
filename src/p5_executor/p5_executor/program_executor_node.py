@@ -2,7 +2,7 @@ import rclpy
 import json
 import time
 import threading
-import asyncio
+import yaml
 
 from rclpy.node import Node
 from tf2_ros import Buffer, TransformListener
@@ -23,6 +23,7 @@ class ProgramExecutor(Node):
 
         self.JSON_PATH = "config/programs.json"
         self.UPDATE_RATE = 500
+        self.FRAME_UPDATE_RATE = 5
         self.THREAD_UPDATE_RATE =  (self.UPDATE_RATE - 1) / 3
         self.LOOKUP = {
             "c_move": self._command_c_move,
@@ -54,6 +55,7 @@ class ProgramExecutor(Node):
                                                             self.get_command_state, 10)
 
         self.service_call_timer = self.create_timer(1/self.UPDATE_RATE, self.service_call_timer_callback)
+        self.frame_call_timer = self.create_timer(1/self.FRAME_UPDATE_RATE, self.frame_call_timer_callback)
 
         self.cache = {} # Stores temporary values which multiple threads require access to.
         self.service_call_list = [] #Stores service calls for the system to call. Format is in a list {"client", "req", "cache_id"}
@@ -110,8 +112,16 @@ class ProgramExecutor(Node):
         response.resp = True
         return response
 
+    def frame_call_timer_callback(self):
+        raw_frames_yaml = self.tf_buffer.all_frames_as_yaml()
+        raw_frames = yaml.safe_load(raw_frames_yaml)
+        self.frames = []
+        
+        for frame_name in raw_frames:
+                if 'parent' in raw_frames[frame_name]:
+                    self.frames.append(frame_name)
+
     def service_call_timer_callback(self):
-        self.frames = self.tf_buffer.all_frames_as_string()
         if len(self.service_call_list) > 0:
             call = self.service_call_list.pop(0)
             client = call["client"]
